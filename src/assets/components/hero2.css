@@ -1,0 +1,63 @@
+.hero-split {
+  display: flex;
+  gap: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.split {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.label {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 2;
+  color: #fff;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.18);
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.split::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.18));
+  z-index: 1;
+}
+
+@media (max-width: 880px) {
+  .hero-split {
+    flex-direction: column;
+    height: 100vh; /* keep the overall section full viewport height */
+  }
+  .split {
+    height: 50vh; /* each panel takes half the viewport height when stacked */
+  }
+  .label {
+    top: 14px;
+    left: 14px;
+    padding: 6px 8px;
+  }
+}
