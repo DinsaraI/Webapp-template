@@ -1,3 +1,6 @@
+/* ## NOTES
+   Hero CSS for landing hero section and overlay. */
+
 .hero {
   position: relative;
   background-image: url("../images/hero.jpg");

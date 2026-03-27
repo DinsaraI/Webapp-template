@@ -1,3 +1,7 @@
+// ## NOTES
+// Hero is the top landing section with image background and CTA buttons.
+// - This is static for now; backend can replace text and button URLs.
+
 import './hero.css';
 
 const Hero = () => {

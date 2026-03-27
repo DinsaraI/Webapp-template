@@ -1,41 +1,40 @@
 // ## NOTES
-// CardSlider displays a horizontal carousel of landing cards.
-// - 2 cards visible on desktop, 1 on mobile
-// - auto-advances every 3 seconds
-// - loops around using next/prev handlers
-// - backend can populate `cards` array, currently static for demo
-
+// ItemSlider shows a products carousel with refresh and navigation.
+// - receives items from App as props (backend friendly)
+// - loops sliding by 2 items at a time
+// - includes placeholder click handler for item actions
+//
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import Card1 from '../images/card 1.jpg';
-import Card2 from '../images/card 2.jpg';
-import Card3 from '../images/card 3.jpg';
-import './card_slider.css';
+import './itemslider.css';
 
-const CardSlider = () => {
-  const cards = [
-    { title: 'Customize your designs', img: Card1 },
-    { title: 'Shop for your looks', img: Card2},
-    { title: 'Meet Your Designer', img: Card3 },
-  ];
+interface Item {
+  title: string;
+  img: string;
+}
 
-  const len = cards.length;
+interface ItemSliderProps {
+  items: Item[];
+}
+
+const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
+  const len = items.length;
   const [index, setIndex] = useState(0);
-  const [visibleCount, setVisibleCount] = useState<number>(2);
+  const [visibleCount, setVisibleCount] = useState<number>(4);
   const [cardWidth, setCardWidth] = useState<number>(0);
   const intervalRef = useRef<number | null>(null);
   const sliderRef = useRef<HTMLDivElement | null>(null);
 
-  // compute the max index so we show two cards at once on desktop
+  // compute the max index
   const maxIndex = Math.max(0, len - visibleCount);
 
-  const next = () => setIndex((i) => (i + 1) % (maxIndex + 1));
-  const prev = () => setIndex((i) => (i - 1 + (maxIndex + 1)) % (maxIndex + 1));
+  const next = () => setIndex((i) => (i + 2) % (maxIndex + 2));
+  const prev = () => setIndex((i) => (i - 2 + (maxIndex + 2)) % (maxIndex + 2));
 
   useEffect(() => {
     // set initial sizes and visible count
     const updateSizes = () => {
-      const vc = window.innerWidth <= 768 ? 1 : 2;
+      const vc = window.innerWidth <= 768 ? 2 : 4;
       setVisibleCount(vc);
 
       const containerWidth = sliderRef.current?.clientWidth ?? 0;
@@ -52,7 +51,7 @@ const CardSlider = () => {
   }, [len]);
 
   useEffect(() => {
-    intervalRef.current = window.setInterval(next, 3000);
+    intervalRef.current = window.setInterval(next, 4000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
@@ -62,7 +61,7 @@ const CardSlider = () => {
     next();
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
-      intervalRef.current = window.setInterval(next, 3000);
+      intervalRef.current = window.setInterval(next, 4000);
     }
   };
 
@@ -70,25 +69,23 @@ const CardSlider = () => {
     prev();
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
-      intervalRef.current = window.setInterval(next, 3000);
+      intervalRef.current = window.setInterval(next, 4000);
     }
   };
 
   return (
-    <div className="card-slider" ref={sliderRef}>
+    <div className="item-slider" ref={sliderRef}>
       <div
         className="track"
         style={{ transform: `translateX(-${index * cardWidth}px)` }}
       >
-        {cards.map((c, i) => (
-          <div className="card" key={i}>
-            <div className="card-image">
-              <img src={c.img} alt={c.title} />
-              <div className="card-overlay" />
-              <div className="card-body">
-                <h3>{c.title}</h3>
-                <button className="card-btn">GO</button>
-              </div>
+        {items.map((item, i) => (
+          <div className="item-card" key={i} onClick={() => alert(`Clicked on ${item.title}`)}>
+            <img src={item.img} alt={item.title} />
+            <div className="item-overlay" />
+            <div className="item-body">
+              <h1>Item 1</h1>
+              <p>This item is a great item. Please buy it bro.</p>
             </div>
           </div>
         ))}
@@ -104,4 +101,4 @@ const CardSlider = () => {
   );
 };
 
-export default CardSlider;
+export default ItemSlider;
