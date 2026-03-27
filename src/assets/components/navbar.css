@@ -1,4 +1,7 @@
 /* Navbar Container */
+/* ## NOTES
+   NavBar CSS for the top navigation area, including profile dropdown. */
+
 .navbar {
   display: flex;
   justify-content: space-between; /* Spacing between Logo, Search, and Links */

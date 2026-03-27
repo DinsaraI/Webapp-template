@@ -1,8 +1,19 @@
+// ## NOTES
+// Navbar holds top UI navigation and profile action.
+// - `isSignedIn` controls whether menu shows sign-in or sign-out
+// - `onSignOut` is called by backend integration
+// - `#login` hash link option in profile deals with frontend-only auth demo.
+
 import { useEffect, useRef, useState } from 'react';
 import { User, Menu } from 'lucide-react';
 import './navbar.css';
 
-const Navbar = () => {
+interface NavbarProps {
+  isSignedIn?: boolean;
+  onSignOut?: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
   const [search, setSearch] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -58,7 +69,20 @@ const Navbar = () => {
           <div className={`profile-menu ${profileOpen ? 'open' : ''}`}>
             <ul>
               <li><button className="menu-item">Switch Account</button></li>
-              <li><button className="menu-item">Sign Out</button></li>
+              <li>
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    if (isSignedIn) {
+                      onSignOut?.();
+                    } else {
+                      window.location.hash = '#login';
+                    }
+                  }}
+                >
+                  {isSignedIn ? 'Sign Out' : 'Sign In'}
+                </button>
+              </li>
               <li><button className="menu-item">Help</button></li>
             </ul>
           </div>

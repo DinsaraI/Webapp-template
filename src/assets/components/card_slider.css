@@ -1,3 +1,6 @@
+/* ## NOTES
+   This CSS file styles the Cards Slider component. */
+
 .card-slider {
 	position: relative;
 	width: 100%;
@@ -19,6 +22,7 @@
 	align-items: center;
 	padding: 28px;
 	min-height: 320px;
+	justify-content: center;
 }
 
 .card-image img {
@@ -69,6 +73,22 @@
 .next-btn {
 	position: absolute;
 	right: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: rgba(255,255,255,0.06);
+	border: none;
+	color: #fff;
+	padding: 10px;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.prev-btn {
+	position: absolute;
+	left: 14px;
 	top: 50%;
 	transform: translateY(-50%);
 	background: rgba(255,255,255,0.06);
