@@ -14,7 +14,7 @@ const Hero = () => {
          Designer-grade silhouettes for the everyday icon. High-end looks, real-world accessibility.
         </p>
         <div className="hero-cta">
-          <button className="btn-primary">View the Collection.</button>
+          <button className="btn-primary" onClick={() => (window.location.hash = '#shop')}>View the Collection.</button>
           <button className="btn-ghost">Style your look</button>
         </div>
       </div>

@@ -5,8 +5,10 @@
 // - `#login` hash link option in profile deals with frontend-only auth demo.
 
 import { useEffect, useRef, useState } from 'react';
-import { User, Menu } from 'lucide-react';
+import { User, Menu, ShoppingCart } from 'lucide-react';
 import './navbar.css';
+import Cart from '../../generative-components/cart';
+import { openCart, getCart } from '../../services/cartService';
 
 interface NavbarProps {
   isSignedIn?: boolean;
@@ -17,7 +19,12 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
   const [search, setSearch] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [cartCount, setCartCount] = useState<number>(getCart().length);
+  const [cartShake, setCartShake] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const lastY = useRef<number>(typeof window !== 'undefined' ? window.scrollY : 0);
+  const ticking = useRef(false);
 
   // close dropdown when clicking outside
   useEffect(() => {
@@ -27,13 +34,58 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
       setProfileOpen(false);
     };
     document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+    const onCartUpdated = () => setCartCount(getCart().length);
+    const onCartAdded = () => {
+      setCartShake(true);
+      setTimeout(() => setCartShake(false), 600);
+    };
+    window.addEventListener('a2w:cart-updated', onCartUpdated as EventListener);
+    window.addEventListener('a2w:cart-added', onCartAdded as EventListener);
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      window.removeEventListener('a2w:cart-updated', onCartUpdated as EventListener);
+      window.removeEventListener('a2w:cart-added', onCartAdded as EventListener);
+    };
+  }, []);
+
+  // hide on scroll down, show on scroll up
+  useEffect(() => {
+    const onScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        // if scrolling down and passed a small threshold, hide
+        if (y > lastY.current && y > 40) {
+          setVisible(false);
+        } else {
+          setVisible(true);
+        }
+        lastY.current = y;
+        ticking.current = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
-    <nav className="navbar">
+    <>
+      <nav className={`navbar ${visible ? 'visible' : 'hidden'}`}>
       {/* Left: Logo */}
-      <div className="logo">A2W</div>
+      <div
+        className="logo"
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          window.location.hash = '';
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') window.location.hash = '';
+        }}
+      >
+        A2W
+      </div>
 
       {/* Center: Functional Search Bar (hidden on small screens) */}
       <div className="search-container">
@@ -49,7 +101,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
       {/* Right: Links + Profile + Mobile Menu Button */}
       <div className="nav-right">
         <ul className="nav-links">
-          <li><a href="#cart">CART</a></li>
+          <li><a href="#shop">SHOP NOW</a></li>
           <li><a href="#contact">CONTACT US</a></li>
           <li><a href="#menu">MENU</a></li>
         </ul>
@@ -88,6 +140,18 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
           </div>
         </div>
 
+        <button
+          className={`nav-cart ${cartShake ? 'shake' : ''}`}
+          aria-label="Open cart"
+          onClick={(e) => {
+            e.preventDefault();
+            openCart();
+          }}
+        >
+          <ShoppingCart size={18} />
+          {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+        </button>
+
         {/* Mobile-only button: toggles panel with search + links */}
         <button
           className="mobile-menu-btn"
@@ -110,13 +174,17 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
           />
 
           <ul className="mobile-links">
-            <li><a href="#cart">CART</a></li>
+            <li>
+              <button className="mobile-cart" onClick={() => openCart()}>Open cart</button>
+            </li>
             <li><a href="#contact">CONTACT US</a></li>
             <li><a href="#menu">MENU</a></li>
           </ul>
         </div>
       </div>
-    </nav>
+      </nav>
+      <Cart />
+    </>
   );
 };
 

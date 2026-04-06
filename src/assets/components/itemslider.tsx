@@ -7,8 +7,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import './itemslider.css';
+import ProductCard from '../../generative-components/product-card';
 
 interface Item {
+  id?: string;
   title: string;
   img: string;
 }
@@ -80,13 +82,8 @@ const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
         style={{ transform: `translateX(-${index * cardWidth}px)` }}
       >
         {items.map((item, i) => (
-          <div className="item-card" key={i} onClick={() => alert(`Clicked on ${item.title}`)}>
-            <img src={item.img} alt={item.title} />
-            <div className="item-overlay" />
-            <div className="item-body">
-              <h1>Item 1</h1>
-              <p>This item is a great item. Please buy it bro.</p>
-            </div>
+          <div className="item-card" key={i} style={{ width: cardWidth }}>
+            <ProductCard id={item.id} name={item.title} image={item.img} price={`2000:lkr`} />
           </div>
         ))}
       </div>

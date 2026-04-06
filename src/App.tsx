@@ -6,6 +6,9 @@
 
 import { useEffect, useState } from 'react';
 import Navbar from './assets/components/navbar';
+import Shop from './pages/shop';
+import ProductDetailPage from './pages/Product-detail-page';
+import Checkout from './pages/checkout';
 import { fetchAuthState, logout as logoutService } from './services/authService';
 import Hero from './assets/components/hero';
 import CardSlider from './assets/components/card_slider';
@@ -23,12 +26,29 @@ import './App.css';
 
 function App() {
   const [showLogin, setShowLogin] = useState(window.location.hash === '#login');
+  const [showShop, setShowShop] = useState(window.location.hash === '#shop');
+  const [showProduct, setShowProduct] = useState(false);
+  const [productId, setProductId] = useState<string | undefined>(undefined);
+  const [showCart, setShowCart] = useState(window.location.hash === '#cart' || window.location.hash === '#checkout');
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     // ## NOTES: hash-based debug routing, also keep auth status updated
     // This is temporary for frontend view. Backend routing may replace this.
-    const onHashChange = () => setShowLogin(window.location.hash === '#login');
+    const onHashChange = () => {
+      const h = window.location.hash || '';
+      setShowLogin(h === '#login');
+      setShowShop(h === '#shop');
+      setShowCart(h === '#cart' || h === '#checkout');
+
+      if (h.startsWith('#product/')) {
+        setShowProduct(true);
+        setProductId(h.replace('#product/', ''));
+      } else {
+        setShowProduct(false);
+        setProductId(undefined);
+      }
+    };
     window.addEventListener('hashchange', onHashChange);
 
     // ## NOTES: authService should be replaced by real API in backend integration
@@ -44,17 +64,18 @@ function App() {
   };
 
   const items = [
-    { title: 'Item 1', img: Item1 },
-    { title: 'Item 2', img: Item2 },
-    { title: 'Item 3', img: Item3 },
-    { title: 'Item 4', img: Item4 },
-    { title: 'Item 5', img: Item5 },
-    { title: 'Item 6', img: Item6 },
+    { id: 'home-1', title: 'Item 1', img: Item1 },
+    { id: 'home-2', title: 'Item 2', img: Item2 },
+    { id: 'home-3', title: 'Item 3', img: Item3 },
+    { id: 'home-4', title: 'Item 4', img: Item4 },
+    { id: 'home-5', title: 'Item 5', img: Item5 },
+    { id: 'home-6', title: 'Item 6', img: Item6 },
   ];
 
-  if (showLogin) {
-    return <Login />;
-  }
+  if (showLogin) return <Login />;
+  if (showShop) return <Shop />;
+  if (showCart) return <Checkout />;
+  if (showProduct) return <ProductDetailPage id={productId} />;
 
   return (
     <div className="app-container">

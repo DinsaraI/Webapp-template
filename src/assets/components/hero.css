@@ -6,7 +6,7 @@
   background-image: url("../images/hero.jpg");
   background-size: cover;
   background-position: center;
-  color: #ffffff;
+  color: var(--bg);
   min-height: calc(100vh - 90px); /* account for fixed navbar height */
   display: flex;
   align-items: center;
@@ -18,7 +18,7 @@
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35));
+  background: linear-gradient(rgba(26,26,26,0.35), rgba(26,26,26,0.35));
   z-index: 0;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .hero-content p {
-  color: #ddd;
+  color: var(--muted);
   font-size: 1.05rem;
   margin: 0 0 18px 0;
 }
@@ -48,8 +48,8 @@
 }
 
 .btn-primary {
-  background: #ffffff;
-  color: #000;
+  background: var(--bg);
+  color: var(--text);
   border: none;
   padding: 10px 18px;
   border-radius: 6px;
@@ -59,8 +59,8 @@
 
 .btn-ghost {
   background: transparent;
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.16);
+  color: var(--bg);
+  border: 1px solid rgba(26,26,26,0.16);
   padding: 10px 18px;
   border-radius: 6px;
   cursor: pointer;
