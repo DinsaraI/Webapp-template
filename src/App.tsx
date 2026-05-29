@@ -12,21 +12,25 @@ import Checkout from './pages/checkout';
 import { fetchAuthState, logout as logoutService } from './services/authService';
 import Hero from './assets/components/hero';
 import CardSlider from './assets/components/card_slider';
-import ItemSlider from './assets/components/itemslider';
 import Hero2 from './assets/components/hero2';
 import Footer from './assets/components/footer';
 import Login from './pages/login';
-import Item1 from './assets/images/item 1.jpg';
-import Item2 from './assets/images/item 2.jpg';
-import Item3 from './assets/images/item 3.jpg';
-import Item4 from './assets/images/item 4.jpg';
-import Item5 from './assets/images/item 5.jpg';
-import Item6 from './assets/images/item 6.jpg';
+import Vendor_login from './Vendor_pages/Vendor_login';
+import Vendor_homepage from './Vendor_pages/Vendor_homepage';
+import Orders from './Vendor_pages/Orders';
+import Products from './Vendor_pages/Products';
+import Vendor_profile from './Vendor_pages/Vendor_profile';
+
 import './App.css';
 
 function App() {
   const [showLogin, setShowLogin] = useState(window.location.hash === '#login');
   const [showShop, setShowShop] = useState(window.location.hash === '#shop');
+  const [showVendorHome, setShowVendorHome] = useState(window.location.hash === '#Vendor_hompage');
+  const [showVendorLogin, setShowVendorLogin] = useState(window.location.hash === '#vendor-login' || window.location.hash === '#join');
+  const [showOrders, setShowOrders] = useState(window.location.hash === '#orders');
+  const [showProducts, setShowProducts] = useState(window.location.hash === '#products');
+  const [showVendorProfile, setShowVendorProfile] = useState(window.location.hash === '#vendor-profile');
   const [showProduct, setShowProduct] = useState(false);
   const [productId, setProductId] = useState<string | undefined>(undefined);
   const [showCart, setShowCart] = useState(window.location.hash === '#cart' || window.location.hash === '#checkout');
@@ -39,6 +43,11 @@ function App() {
       const h = window.location.hash || '';
       setShowLogin(h === '#login');
       setShowShop(h === '#shop');
+      setShowVendorHome(h === '#Vendor_hompage');
+      setShowVendorLogin(h === '#vendor-login' || h === '#join');
+      setShowOrders(h === '#orders');
+      setShowProducts(h === '#products');
+      setShowVendorProfile(h === '#vendor-profile');
       setShowCart(h === '#cart' || h === '#checkout');
 
       if (h.startsWith('#product/')) {
@@ -63,17 +72,14 @@ function App() {
     window.location.hash = '';
   };
 
-  const items = [
-    { id: 'home-1', title: 'Item 1', img: Item1 },
-    { id: 'home-2', title: 'Item 2', img: Item2 },
-    { id: 'home-3', title: 'Item 3', img: Item3 },
-    { id: 'home-4', title: 'Item 4', img: Item4 },
-    { id: 'home-5', title: 'Item 5', img: Item5 },
-    { id: 'home-6', title: 'Item 6', img: Item6 },
-  ];
 
   if (showLogin) return <Login />;
   if (showShop) return <Shop />;
+  if (showVendorLogin) return <Vendor_login />;
+  if (showVendorHome) return <Vendor_homepage />;
+  if (showOrders) return <Orders />;
+  if (showProducts) return <Products />;
+  if (showVendorProfile) return <Vendor_profile />;
   if (showCart) return <Checkout />;
   if (showProduct) return <ProductDetailPage id={productId} />;
 
@@ -83,7 +89,7 @@ function App() {
       <Hero />
       <CardSlider />
       <Hero2 />
-      <ItemSlider items={items} />
+
       <Footer />
     </div>
   );

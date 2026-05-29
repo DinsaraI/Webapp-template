@@ -104,6 +104,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
           <li><a href="#shop">SHOP NOW</a></li>
           <li><a href="#contact">CONTACT US</a></li>
           <li><a href="#menu">MENU</a></li>
+          <li><a href="#join">JOIN US</a></li>
         </ul>
 
         <div className="profile-icon" ref={profileRef}>
@@ -177,6 +178,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
             <li>
               <button className="mobile-cart" onClick={() => openCart()}>Open cart</button>
             </li>
+            <li><a href="#join">JOIN US</a></li>
             <li><a href="#contact">CONTACT US</a></li>
             <li><a href="#menu">MENU</a></li>
           </ul>

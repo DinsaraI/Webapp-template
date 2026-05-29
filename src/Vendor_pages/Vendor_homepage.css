@@ -1,0 +1,77 @@
+.vendor-page-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.vendor-homepage {
+  flex: 1;
+  margin-left: 250px;
+  padding: 2rem 4%;
+  max-width: 100%;
+  color: var(--text);
+  transition: margin-left 0.3s ease;
+}
+
+.vendor-header {
+  margin-bottom: 2rem;
+}
+
+.vendor-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2rem, 2.5vw, 3rem);
+}
+
+.vendor-header p {
+  margin: 0;
+  color: rgba(26, 26, 26, 0.7);
+}
+
+.vendor-widgets {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 2fr);
+}
+
+.vendor-widget {
+  background: rgba(249, 248, 246, 0.8);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: 26px;
+  padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.06);
+}
+
+.vendor-widget.revenue-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .vendor-widgets {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Full-width revenue section that stretches to page edges (offsets for container padding) */
+.vendor-revenue-full {
+  margin: 0 -4%;
+  padding: 1.5rem 4%;
+  background: transparent;
+}
+.vendor-revenue-full .revenue-display {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .vendor-homepage {
+    margin-left: 0;
+    padding: 2rem 1.5rem;
+    padding-top: 70px;
+  }
+
+  .vendor-page-container {
+    flex-direction: column;
+  }
+}

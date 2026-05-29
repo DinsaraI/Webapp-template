@@ -1,5 +1,1 @@
 /* App-level layout is intentionally minimal; spacing handled per-component */
-
-.app-container {
-	/* no bottom padding here — footer spacing handled by components */
-}

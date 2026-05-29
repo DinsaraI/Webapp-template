@@ -75,7 +75,7 @@
 
 .column a {
   display: block;
-  color: var(--muted);
+  color: #B0B0B0;
   text-decoration: none;
   margin-bottom: 8px;
   font-size: 0.9rem;
@@ -95,7 +95,7 @@
 }
 
 .footer-links a {
-  color: var(--muted);
+  color: #B0B0B0;
   text-decoration: none;
   margin-left: 16px;
 }
