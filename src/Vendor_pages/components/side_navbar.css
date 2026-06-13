@@ -1,12 +1,14 @@
+@import "../vendor-theme.css";
+
 .side-navbar {
   position: fixed;
   left: 0;
   top: 0;
   width: 250px;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, var(--accent-2) 0%, var(--accent) 100%);
   padding-top: 20px;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.06);
   transition: transform 0.3s ease, left 0.3s ease;
   z-index: 100;
   overflow-y: auto;
@@ -15,10 +17,10 @@
 .navbar-brand {
   font-size: 1.5rem;
   font-weight: bold;
-  color: white;
+  color: var(--bg);
   padding: 20px;
   text-align: center;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.06);
   margin-bottom: 20px;
 }
 
@@ -38,8 +40,8 @@
   gap: 15px;
   width: 100%;
   padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--bg);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -49,14 +51,14 @@
 }
 
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
   transform: translateX(5px);
 }
 
 .nav-link.active {
-  background: rgba(255, 255, 255, 0.3);
-  border-left: 4px solid white;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-left: 4px solid var(--bg);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.06);
 }
 
 .nav-link span {
@@ -68,19 +70,19 @@
   position: fixed;
   top: 20px;
   left: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--accent-2);
+  color: var(--bg);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   padding: 10px;
   z-index: 110;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .mobile-menu-toggle:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* Mobile Responsive */
@@ -118,14 +120,14 @@
 }
 
 .side-navbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .side-navbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 3px;
 }
 
 .side-navbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.18);
 }

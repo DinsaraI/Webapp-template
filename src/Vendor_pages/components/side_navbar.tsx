@@ -15,7 +15,7 @@ const SideNavbar: React.FC<SideNavbarProps> = ({ activeItem = 'home' }) => {
     { id: 'products', label: 'Products', icon: Package, hash: '#products' },
     { id: 'profile', label: 'My Profile', icon: User, hash: '#vendor-profile' },
     { id: 'settings', label: 'Settings', icon: Settings, hash: '#vendor-settings' },
-     { id: 'returnhome', label: 'Return toHome', icon: Home, hash: '#App' },
+     { id: 'returnhome', label: 'Return to Home', icon: Home, hash: '#App' },
   ];
 
   const handleNavigation = (hash: string) => {

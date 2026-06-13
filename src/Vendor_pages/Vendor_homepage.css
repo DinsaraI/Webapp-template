@@ -1,3 +1,5 @@
+@import "./vendor-theme.css";
+
 .vendor-page-container {
   display: flex;
   min-height: 100vh;
@@ -10,6 +12,7 @@
   max-width: 100%;
   color: var(--text);
   transition: margin-left 0.3s ease;
+  background: transparent;
 }
 
 .vendor-header {
@@ -23,7 +26,7 @@
 
 .vendor-header p {
   margin: 0;
-  color: rgba(26, 26, 26, 0.7);
+  color: var(--subtext);
 }
 
 .vendor-widgets {
@@ -33,11 +36,11 @@
 }
 
 .vendor-widget {
-  background: rgba(249, 248, 246, 0.8);
-  border: 1px solid rgba(26, 26, 26, 0.08);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
   border-radius: 26px;
   padding: 1.5rem;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 24px 60px var(--shadow);
 }
 
 .vendor-widget.revenue-widget {

@@ -8,15 +8,51 @@
 	font-display: swap;
 }
 
+/* Local project fonts */
+@font-face {
+	font-family: 'Onneir';
+	src: url('./assets/fonts/onnier.otf') format('opentype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Bodoni Moda';
+	src: url('./assets/fonts/BodoniModa-VariableFont_opszwght-BF6437720bbd36c.ttf') format('truetype');
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Inter';
+	src: url('./assets/fonts/InterTight-VariableFont_wght.ttf') format('truetype');
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Montserrat';
+	src: url('./assets/fonts/Montserrat-VariableFont_wght.ttf') format('truetype');
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
+}
+
 /* Keep Montserrat as a fallback (optional) */
 /* Pull title/body fonts from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,100..900;1,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 /* Global reset to avoid body default margins causing header gaps */
 :root{
-	--font-title: 'Playfair Display', serif;
-	--font-body: 'Inter Tight', 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-h1: 'Onneir', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-h2: 'Bodoni Moda', serif;
+	--font-h3: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-h4: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-h5: 'Montserrat', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-body: 'Montserrat', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 html, body {
@@ -35,13 +71,26 @@ html, body {
 	--card-bg: rgba(26,26,26,0.03);
 }
 
-/* Headings and title-like elements should use Playfair Display */
-h1,h2,h3,h4,h5,h6,
+/* Headings and title-like elements use the requested families */
+h1 {
+  font-family: var(--font-h1);
+}
+h2 {
+  font-family: var(--font-h2);
+}
+h3,
+h4 {
+  font-family: var(--font-h3);
+}
+h5,
+p {
+  font-family: var(--font-body);
+}
 .section-title,
 .card-title,
 .hero-title,
 .pc-title {
-  font-family: var(--font-title);
+  font-family: var(--font-h2);
 }
 
 /* Keep the navbar logo using the existing Elsanz face (don't apply global font) */

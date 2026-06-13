@@ -1,0 +1,11 @@
+/* Sidebar styles for Admin Panel */
+.admin-side{
+  width:240px;padding:28px;background:linear-gradient(180deg,#0f172a,#0b1220);color:white;display:flex;flex-direction:column;gap:12px;min-height:100vh;position:sticky;top:0}
+.admin-side h2{margin:0;font-size:18px;letter-spacing:0.2px}
+.admin-side nav{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.admin-side nav button{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:0;background:transparent;color:rgba(255,255,255,0.85);cursor:pointer;text-align:left;font-weight:600}
+.admin-side nav button:hover{background:rgba(255,255,255,0.03)}
+.admin-side nav button.active{background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));box-shadow:0 6px 18px rgba(2,6,23,0.4)}
+.admin-side nav button svg{opacity:0.9}
+
+@media(max-width:800px){.admin-side{display:none}}

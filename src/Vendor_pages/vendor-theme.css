@@ -1,0 +1,44 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f8f9fa;
+  --panel-bg: #f5f6f7;
+  --muted-bg: #f2f2f4;
+  --text: #0b1220;
+  --subtext: #6b7280;
+  --border: #e6e7e9;
+  --accent: #111827;
+  --accent-2: #374151;
+  --shadow: rgba(0, 0, 0, 0.06);
+  --glass-1: rgba(255,255,255,0.06);
+}
+
+/* Limit these rules to vendor pages container */
+.vendor-page-container { background: var(--bg); }
+.vendor-page-container, .vendor-page-container * { color-scheme: light; }
+
+/* Utility classes for vendor UI */
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 50px var(--shadow);
+}
+
+.muted { color: var(--subtext); }
+.muted-bg { background: var(--muted-bg); }
+
+/* Vendor pages: explicitly exclude Onneir and Bodoni Moda */
+/* Use Montserrat and Inter only inside the vendor pages container */
+.vendor-page-container {
+  font-family: 'Montserrat', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+.vendor-page-container h1,
+.vendor-page-container h2,
+.vendor-page-container h3,
+.vendor-page-container h4,
+.vendor-page-container h5,
+.vendor-page-container p,
+.vendor-page-container span,
+.vendor-page-container a,
+.vendor-page-container button {
+  font-family: inherit;
+}

@@ -1,3 +1,4 @@
+@import "./vendor-theme.css";
 .orders-page {
   flex: 1;
   margin-left: 250px;
@@ -13,12 +14,12 @@
 .orders-header h1 {
   margin: 0 0 0.5rem;
   font-size: clamp(2rem, 2.5vw, 3rem);
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .orders-header p {
   margin: 0;
-  color: rgba(26, 26, 26, 0.7);
+  color: var(--subtext);
   font-size: 1rem;
 }
 
@@ -31,7 +32,7 @@
 }
 
 .orders-column {
-  background: rgba(249, 248, 246, 0.8);
+  background: var(--panel-bg);
   border: 1px solid rgba(26, 26, 26, 0.08);
   border-radius: 16px;
   padding: 1.5rem;
@@ -54,7 +55,7 @@
 
 .no-orders {
   text-align: center;
-  color: rgba(26, 26, 26, 0.5);
+  color: var(--subtext);
   font-size: 1.1rem;
   padding: 2rem;
   width: 100%;
@@ -75,7 +76,7 @@
 }
 
 .order-item {
-  background: white;
+  background: var(--bg);
   border: 1px solid rgba(26, 26, 26, 0.05);
   border-radius: 10px;
   padding: 1rem;
@@ -87,20 +88,20 @@
 }
 
 .order-item:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
 
 .order-info h3 {
   margin: 0 0 0.25rem;
   font-size: 0.95rem;
-  color: #1a1a1a;
+  color: var(--text);
 }
 
 .order-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: rgba(26, 26, 26, 0.6);
+  color: var(--subtext);
 }
 
 .order-meta {
@@ -112,20 +113,20 @@
 
 .order-total {
   font-weight: 600;
-  color: #667eea;
+  color: var(--accent-2);
   font-size: 0.95rem;
 }
 
 .order-status,
 .order-date {
   font-size: 0.75rem;
-  color: rgba(26, 26, 26, 0.6);
+  color: var(--subtext);
   text-transform: capitalize;
 }
 
 /* Full Width All Orders Section */
 .all-orders-section {
-  background: rgba(249, 248, 246, 0.8);
+  background: var(--panel-bg);
   border: 1px solid rgba(26, 26, 26, 0.08);
   border-radius: 16px;
   padding: 2rem;
@@ -159,7 +160,7 @@
 
 .filter-btn {
   padding: 0.5rem 1rem;
-  background: white;
+  background: var(--bg);
   border: 1px solid rgba(26, 26, 26, 0.1);
   border-radius: 8px;
   cursor: pointer;
@@ -169,7 +170,7 @@
 }
 
 .filter-btn:hover {
-  background: #667eea;
+  background: var(--accent-2);
   color: white;
   border-color: #667eea;
 }
@@ -195,7 +196,7 @@
 }
 
 .orders-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-2);
   color: white;
 }
 
@@ -228,24 +229,24 @@
 
 .status-badge.ongoing,
 .status-badge.current {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #f5f7fa;
+  color: #374151;
 }
 
 .status-badge.upcoming {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: #faf7fb;
+  color: #5b5560;
 }
 
 .status-badge.past {
-  background: #e8f5e9;
-  color: #388e3c;
+  background: #f7faf8;
+  color: #334155;
 }
 
 .action-btn {
   padding: 0.4rem 0.8rem;
-  background: #667eea;
-  color: white;
+  background: var(--accent-2);
+  color: var(--bg);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -254,7 +255,7 @@
 }
 
 .action-btn:hover {
-  background: #764ba2;
+  background: var(--accent);
   transform: scale(1.05);
 }
 
