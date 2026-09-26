@@ -1,0 +1,135 @@
+/* ## NOTES
+   This CSS file styles the Cards Slider component. */
+
+.card-slider {
+	position: relative;
+	width: 100%;
+	max-width: 1100px;
+	margin: 48px auto 160px; /* increased bottom spacing to separate from footer */
+	z-index: 10; /* ensure slider displays above footer if stacking conflicts occur */
+	overflow: hidden;
+}
+
+.track {
+	display: flex;
+	transition: transform 0.6s cubic-bezier(.22,.9,.31,1);
+}
+
+.card {
+	min-width: 50%;
+	box-sizing: border-box;
+	display: flex;
+	gap: 24px;
+	align-items: center;
+	padding: 28px;
+	min-height: 320px;
+	justify-content: center;
+}
+
+.card-image img {
+	max-width: 360px; /* cap the image width */
+	width: 100%;
+	height: auto; /* preserve aspect ratio to avoid tall images */
+	aspect-ratio: 16 / 10; /* force a landscape ratio so images stay wider-than-tall */
+	object-fit: cover;
+	border-radius: 12px;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+}
+
+.card-body {
+	color: var(--bg);
+	max-width: 640px;
+	position: absolute;
+	left: 24px;
+	bottom: 24px;
+	z-index: 3;
+}
+
+.card-body h3 {
+	margin: 0 0 12px 0;
+	font-size: 1.6rem;
+}
+
+.card-btn {
+	background: var(--bg);
+	color: var(--text);
+	border: none;
+	padding: 10px 16px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.card-image {
+	position: relative;
+	display: inline-block;
+}
+
+.card-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(26,26,26,0.35);
+	border-radius: 12px;
+	z-index: 2;
+}
+
+.next-btn {
+	position: absolute;
+	right: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: var(--bg);
+	border: 1px solid rgba(26,26,26,0.06);
+	color: var(--text);
+	padding: 10px;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.prev-btn {
+	position: absolute;
+	left: 14px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: var(--bg);
+	border: 1px solid rgba(26,26,26,0.06);
+	color: var(--text);
+	padding: 10px;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Show only one card at a time on small screens */
+@media (max-width: 768px) {
+	.card {
+		min-width: 100%;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		padding: 18px;
+		min-height: auto;
+	}
+	.card-image img {
+		max-width: 92%;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 16 / 10;
+	}
+	.card-body {
+		position: absolute;
+		left: 12px;
+		right: 12px;
+		bottom: 16px;
+		text-align: left;
+	}
+	.card-overlay {
+		border-radius: 10px;
+	}
+}
+

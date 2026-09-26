@@ -1,0 +1,116 @@
+/* ## NOTES
+   Footer CSS for main site footer styling. */
+
+.site-footer {
+  position: relative; /* ensure it participates in normal flow and stacks after content */
+  z-index: 1;
+  background: var(--text);
+  color: var(--bg);
+  font-family: 'Montserrat', sans-serif;
+}
+.footer-top {
+  border-bottom: 1px solid rgba(26,26,26,0.08);
+  padding: 12px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 4%;
+}
+
+.footer-social,
+.footer-payments {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 4%;
+}
+
+.brand-block {
+  background: rgba(26,26,26,0.12);
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.brand-block h2 {
+  margin: 0 0 12px;
+  font-size: 1.8rem;
+}
+
+.brand-block .rating {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  color: var(--bg);
+}
+
+.download-btn {
+  background: var(--text);
+  border: 1px solid var(--bg);
+  color: var(--bg);
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.column h3 {
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.6px;
+}
+
+.column a {
+  display: block;
+  color: #B0B0B0;
+  text-decoration: none;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.column a:hover {
+  color: var(--bg);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(26,26,26,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 4%;
+  font-size: 0.85rem;
+}
+
+.footer-links a {
+  color: #B0B0B0;
+  text-decoration: none;
+  margin-left: 16px;
+}
+
+.footer-links a:hover {
+  color: var(--bg);
+}
+
+@media (max-width: 980px) {
+  .footer-main {
+    grid-template-columns: 1fr;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
