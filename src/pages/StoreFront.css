@@ -1,0 +1,127 @@
+.storefront-page {
+  min-height: 100vh;
+  padding-top: 90px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.storefront-main {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 64px 0 88px;
+}
+
+.storefront-heading {
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.16);
+  padding-bottom: 22px;
+}
+
+.storefront-kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.storefront-heading h1 {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 2.2rem;
+  font-weight: 500;
+}
+
+.storefront-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 28px 20px;
+}
+
+.storefront-product {
+  min-width: 0;
+}
+
+.storefront-image-link {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  background: #e9e6df;
+  color: inherit;
+}
+
+.storefront-image-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+.storefront-image-link:hover img {
+  transform: scale(1.025);
+}
+
+.storefront-product-info {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.storefront-product-info h2,
+.storefront-product-info p {
+  margin: 0;
+}
+
+.storefront-product-info h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.storefront-product-info p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.storefront-detail-link {
+  flex: 0 0 auto;
+  color: var(--text);
+  font-size: 0.82rem;
+  text-underline-offset: 3px;
+}
+
+.storefront-state {
+  padding: 36px 0;
+  color: var(--muted);
+}
+
+.storefront-state.error {
+  color: #8d2828;
+}
+
+@media (max-width: 600px) {
+  .storefront-main {
+    width: min(1240px, calc(100% - 32px));
+    padding-top: 36px;
+  }
+
+  .storefront-heading h1 {
+    font-size: 1.8rem;
+  }
+
+  .storefront-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+
+  .storefront-product-info {
+    display: block;
+  }
+
+  .storefront-detail-link {
+    display: inline-block;
+    margin-top: 8px;
+  }
+}

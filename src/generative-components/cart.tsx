@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './cart.css';
 import { getCart, removeItem, clearCart } from '../services/cartService';
 
@@ -11,6 +12,7 @@ type Item = {
 };
 
 const Cart: React.FC = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
 
@@ -36,7 +38,7 @@ const Cart: React.FC = () => {
 
   const handleProceed = () => {
     setOpen(false);
-    window.location.hash = '#checkout';
+    navigate('/checkout');
   };
 
   if (!open) return null;

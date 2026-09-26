@@ -1,33 +1,79 @@
-import React from 'react';
-import type { Product } from './types';
+import { useCallback, useEffect, useState } from 'react';
+import { deleteProduct, getProducts } from '../services/productService';
+import type { Product } from '../types/product';
+import AdminAddProduct from './AdminAddProduct';
+import './Global_inventory.css';
 
-interface Props {
-	products: Product[];
-	search: string;
-	setSearch: (v: string) => void;
-	takeDown: (id: string) => void;
-}
+const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
+	style: 'currency',
+	currency: 'LKR',
+	maximumFractionDigits: 2,
+}).format(Number(price));
 
-const Global_inventory: React.FC<Props> = ({ products, search, setSearch, takeDown }) => {
-	const filtered = products.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()) || p.vendor.toLowerCase().includes(search.toLowerCase()));
+const Global_inventory = () => {
+	const [products, setProducts] = useState<Product[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [errorMessage, setErrorMessage] = useState('');
+
+	const loadProducts = useCallback(async () => {
+		setLoading(true);
+		setErrorMessage('');
+		try {
+			setProducts(await getProducts());
+		} catch (error) {
+			setErrorMessage(error instanceof Error ? error.message : 'Products could not be loaded.');
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
+	useEffect(() => { void loadProducts(); }, [loadProducts]);
+
+	const handleDelete = async (product: Product) => {
+		if (!window.confirm(`Delete "${product.title}" and its image?`)) return;
+		setDeletingId(product.id);
+		setErrorMessage('');
+		try {
+			await deleteProduct(product);
+			setProducts((current) => current.filter((item) => item.id !== product.id));
+		} catch (error) {
+			setErrorMessage(error instanceof Error ? error.message : 'Product could not be deleted.');
+		} finally {
+			setDeletingId(null);
+		}
+	};
+
 	return (
-		<section>
-			<h1>Global Inventory & Content Moderation</h1>
-			<div className="inventory-controls">
-				<input placeholder="Search products or vendor" value={search} onChange={(e) => setSearch(e.target.value)} />
-			</div>
+		<section className="admin-inventory">
+			<header className="admin-inventory-heading">
+				<div>
+					<h1>Product inventory</h1>
+					<p>Manage products available in the customer storefront.</p>
+				</div>
+				<span>{products.length} products</span>
+			</header>
 
-			<div className="product-grid">
-				{filtered.map((p) => (
-					<div key={p.id} className={`product-card ${p.removed ? 'removed' : ''}`}>
-						<h4>{p.title}</h4>
-						<p>{p.vendor}</p>
-						<p>${p.price}</p>
-						{!p.removed && <button onClick={() => takeDown(p.id)}>Take Down</button>}
-						{p.removed && <span className="takedown">Removed</span>}
-					</div>
+			<AdminAddProduct onProductAdded={() => { void loadProducts(); }} />
+
+			<section className="admin-product-list" aria-labelledby="admin-products-title">
+				<h2 id="admin-products-title">Products</h2>
+				{loading && <p role="status">Loading products...</p>}
+				{errorMessage && <p className="admin-product-message error" role="alert">{errorMessage}</p>}
+				{!loading && !errorMessage && products.length === 0 && <p>No products have been added.</p>}
+				{products.map((product) => (
+					<article className="admin-product-row" key={product.id}>
+						<img src={product.image_url} alt="" />
+						<div className="admin-product-row-info">
+							<h3>{product.title}</h3>
+							<p>{formatPrice(product.price)} · {product.stock} in stock</p>
+						</div>
+						<button type="button" onClick={() => void handleDelete(product)} disabled={deletingId === product.id}>
+							{deletingId === product.id ? 'Deleting...' : 'Delete'}
+						</button>
+					</article>
 				))}
-			</div>
+			</section>
 		</section>
 	);
 };

@@ -64,30 +64,21 @@
 
 .form-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin: 12px 0 18px;
   font-size: 0.85rem;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-}
-
-.checkbox-label input {
-  width: 16px;
-  height: 16px;
-  display: inline-flex;
-  vertical-align: middle;
-  margin: 0;
-}
-
 .forgot-link {
-  color: rgba(26,26,26,0.6);
-  text-decoration: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(26,26,26,0.72);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .primary-btn,
@@ -106,6 +97,30 @@
 .primary-btn {
   background: var(--accent);
   color: var(--bg);
+}
+
+.primary-btn:disabled,
+.google-btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.auth-message {
+  margin: 4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.auth-message.error {
+  color: #8d2828;
+  background: #f8e6e3;
+}
+
+.auth-message.success {
+  color: #245b3b;
+  background: #e5f1e8;
 }
 
 .google-btn {

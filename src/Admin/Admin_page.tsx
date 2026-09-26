@@ -6,7 +6,8 @@ import Vendor_approvals from './Vendor_approvals';
 import Global_inventory from './Global_inventory';
 import Finances from './Finances';
 import Designer_manager from './Designer_manager';
-import type { Order, Vendor, Product, Transaction, Designer } from './types';
+import type { Order, Vendor, Transaction, Designer } from './types';
+import { logout } from '../services/authService';
 
 const mockOrders: Order[] = [
 	{ id: 'ORD-1001', customer: 'Alice', vendor: 'LuxeDesign', amount: 420, status: 'Paid' },
@@ -17,11 +18,6 @@ const mockOrders: Order[] = [
 const mockVendors: Vendor[] = [
 	{ id: 'V-900', brand: 'NewCraft', bio: 'Handmade silk pieces', approved: false },
 	{ id: 'V-901', brand: 'HeritageCo', bio: 'Family-run atelier', approved: true },
-];
-
-const mockProducts: Product[] = [
-	{ id: 'P-1', title: 'Silk Scarf', vendor: 'NewCraft', price: 120 },
-	{ id: 'P-2', title: 'Tailored Coat', vendor: 'HeritageCo', price: 980 },
 ];
 
 const mockTransactions: Transaction[] = [
@@ -42,20 +38,22 @@ const Admin_page: React.FC = () => {
 
 	const [orders, setOrders] = useState<Order[]>(mockOrders);
 	const [vendors, setVendors] = useState<Vendor[]>(mockVendors);
-	const [products, setProducts] = useState<Product[]>(mockProducts);
 	const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
 	const [designers, setDesigners] = useState<Designer[]>(mockDesigners);
 
-	const [search, setSearch] = useState('');
 
 	// Modal state for confirming order ETA
 	const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
 	const [etaInput, setEtaInput] = useState('');
 
-	const handleLogout = () => {
+	const handleLogout = async () => {
+		const { error } = await logout();
+		if (error) {
+			console.error('Unable to sign out:', error.message);
+			return;
+		}
 		localStorage.removeItem('adminAuthenticated');
 		window.location.hash = '';
-		window.location.reload();
 	};
 
 	const openConfirm = (o: Order) => {
@@ -83,10 +81,6 @@ const Admin_page: React.FC = () => {
 
 	const toggleSuspend = (id: string) => {
 		setVendors((v) => v.map((x) => x.id === id ? { ...x, suspended: !x.suspended } : x));
-	};
-
-	const takeDown = (id: string) => {
-		setProducts((p) => p.map((x) => x.id === id ? { ...x, removed: true } : x));
 	};
 
 	const markTransferred = (id: string) => {
@@ -168,7 +162,7 @@ const Admin_page: React.FC = () => {
 				)}
 
 				{view === 'inventory' && (
-					<Global_inventory products={products} search={search} setSearch={setSearch} takeDown={takeDown} />
+					<Global_inventory />
 				)}
 
 				{view === 'finances' && (

@@ -5,6 +5,7 @@
 // - `#login` hash link option in profile deals with frontend-only auth demo.
 
 import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Menu, ShoppingCart } from 'lucide-react';
 import './navbar.css';
 import Cart from '../../generative-components/cart';
@@ -16,6 +17,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -78,10 +80,14 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
         role="button"
         tabIndex={0}
         onClick={() => {
+          navigate('/');
           window.location.hash = '';
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') window.location.hash = '';
+          if (e.key === 'Enter') {
+            navigate('/');
+            window.location.hash = '';
+          }
         }}
       >
         A2W
@@ -101,10 +107,9 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
       {/* Right: Links + Profile + Mobile Menu Button */}
       <div className="nav-right">
         <ul className="nav-links">
-          <li><a href="#shop">SHOP NOW</a></li>
-          <li><a href="#contact">CONTACT US</a></li>
-          <li><a href="#menu">MENU</a></li>
-          <li><a href="#join">JOIN US</a></li>
+          <li><Link to="/shop">SHOP NOW</Link></li>
+          <li><Link to="/contact">CONTACT US</Link></li>
+          <li><Link to="/">MENU</Link></li>
         </ul>
 
         <div className="profile-icon" ref={profileRef}>
@@ -129,7 +134,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
                     if (isSignedIn) {
                       onSignOut?.();
                     } else {
-                      window.location.hash = '#login';
+                      navigate('/login');
                     }
                   }}
                 >
@@ -178,9 +183,8 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
             <li>
               <button className="mobile-cart" onClick={() => openCart()}>Open cart</button>
             </li>
-            <li><a href="#join">JOIN US</a></li>
-            <li><a href="#contact">CONTACT US</a></li>
-            <li><a href="#menu">MENU</a></li>
+            <li><Link to="/contact">CONTACT US</Link></li>
+            <li><Link to="/">MENU</Link></li>
           </ul>
         </div>
       </div>

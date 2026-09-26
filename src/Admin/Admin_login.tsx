@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { isAdminUser } from '../services/authService';
+import { supabase } from '../supabaseClient';
 import './Admin_login.css';
 
 interface AdminLoginProps {
@@ -6,30 +8,30 @@ interface AdminLoginProps {
 }
 
 const Admin_login: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
-	const [username, setUsername] = useState('');
+	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
 
-	const ADMIN_USERNAME = 'Asini.iAuth';
-	const ADMIN_PASSWORD = 'Asinisu#2699';
-
-	const handleLogin = (e: React.FormEvent) => {
+	const handleLogin = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError('');
 		setLoading(true);
 
-		// Simulate a small delay for better UX
-		setTimeout(() => {
-			if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-				localStorage.setItem('adminAuthenticated', 'true');
-				onLoginSuccess();
-			} else {
-				setError('Invalid username or password');
-				setPassword('');
+		try {
+			const { data, error: loginError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+			if (loginError) throw loginError;
+			if (!data.user || !(await isAdminUser(data.user.id))) {
+				await supabase.auth.signOut();
+				throw new Error('This account does not have admin access.');
 			}
+			onLoginSuccess();
+		} catch (loginError) {
+			setError(loginError instanceof Error ? loginError.message : 'Admin sign-in failed.');
 			setLoading(false);
-		}, 500);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -41,14 +43,16 @@ const Admin_login: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
 					<form onSubmit={handleLogin} className="login-form">
 						<div className="form-group">
-							<label htmlFor="username">Username</label>
+							<label htmlFor="email">Email</label>
 							<input
-								id="username"
-								type="text"
-								placeholder="Enter username"
-								value={username}
-								onChange={(e) => setUsername(e.target.value)}
+								id="email"
+								type="email"
+								placeholder="Enter admin email"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
 								disabled={loading}
+								autoComplete="username"
+								required
 								autoFocus
 							/>
 						</div>
@@ -62,6 +66,8 @@ const Admin_login: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								disabled={loading}
+								autoComplete="current-password"
+								required
 							/>
 						</div>
 

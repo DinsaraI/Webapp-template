@@ -3,7 +3,8 @@
 .pd-main{max-width:1200px;margin:28px auto;padding:16px}
 .pd-inner{display:grid;grid-template-columns:1fr 420px;gap:24px}
 .pd-images{display:flex;flex-direction:column;gap:12px}
-.pd-main-image{height:520px;background:var(--text);background-size:cover;background-position:center;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.pd-main-image{height:520px;background:#e9e6df;background-size:cover;background-position:center;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.pd-main-image img{display:block;width:100%;height:100%;object-fit:cover}
 .pd-placeholder{color:rgba(26,26,26,0.6)}
 .pd-thumbs{display:flex;gap:8px;margin-top:8px}
 .pd-thumb{width:72px;height:72px;background:var(--text);background-size:cover;background-position:center;border-radius:8px;border:1px solid rgba(26,26,26,0.03)}
@@ -11,9 +12,15 @@
 .pd-meta{padding:8px 12px;display:flex;flex-direction:column;gap:12px}
 .pd-title{margin:0;font-size:22px;font-weight:800}
 .pd-price{font-size:18px;color:var(--accent);font-weight:800}
+.pd-stock{margin:0;font-size:0.9rem}
+.pd-stock.available,.pd-state.available{color:#286542}
+.pd-stock.unavailable{color:#9b2c24}
+.pd-state{margin:0;padding:12px 0}
+.pd-state.error{color:#9b2c24}
 .pd-actions{display:flex;gap:12px}
 .btn{padding:10px 14px;border-radius:10px;border:1px solid transparent;cursor:pointer}
 .btn-primary{background:var(--accent);color:var(--bg)}
+.btn-primary:disabled{cursor:not-allowed;opacity:0.55}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid rgba(26,26,26,0.06)}
 .pd-description h3{margin:0 0 6px 0}
 .pd-related-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}

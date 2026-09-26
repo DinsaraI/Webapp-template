@@ -1,34 +1,102 @@
-// ## NOTES
-// Login page for frontend dev temporary authentication.
-// - Uses authService.login, redirects to main app on success
-// - Google button placeholder, backend can add OAuth flow
-// - #login hash routing controlled by App.tsx
-
 import { useState } from 'react';
-import { login as loginService } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
+import {
+  login as loginService,
+  register as registerService,
+  requestPasswordReset,
+  signInWithGoogle,
+  updatePassword,
+} from '../services/authService';
+import googleIcon from '../assets/images/google.png';
 import './login.css';
 
-const Login = () => {
-  const [username, setUsername] = useState('');
+type LoginMode = 'login' | 'signup' | 'forgotPassword' | 'resetPassword';
+
+interface LoginProps {
+  initialMode?: LoginMode;
+  onAuthComplete?: () => void;
+}
+
+const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<LoginMode>(initialMode);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(null);
+    setSubmitting(true);
 
-    const result = await loginService({ username, password });
+    try {
+      if (mode === 'forgotPassword') {
+        const { error } = await requestPasswordReset(email.trim());
+        if (error) throw error;
+        setMessage({ type: 'success', text: 'If an account exists for that email, a password reset link is on its way.' });
+        return;
+      }
 
-    if (result.success) {
-      console.log('Login success:', result.user);
+      if (mode === 'resetPassword') {
+        if (password !== confirmPassword) {
+          setMessage({ type: 'error', text: 'The passwords do not match.' });
+          return;
+        }
+        const { error } = await updatePassword(password);
+        if (error) throw error;
+        setPassword('');
+        setConfirmPassword('');
+        setMode('login');
+        setMessage({ type: 'success', text: 'Your password has been updated.' });
+        return;
+      }
+
+      if (mode === 'signup') {
+        const { data, error } = await registerService(email.trim(), password, fullName.trim());
+        if (error) throw error;
+        if (data.session) {
+          navigate('/', { replace: true });
+          window.location.hash = '';
+        } else {
+          setMessage({ type: 'success', text: 'Account created. Check your email to confirm your address, then sign in.' });
+          setMode('login');
+        }
+        return;
+      }
+
+      const { error } = await loginService(email.trim(), password);
+      if (error) throw error;
+      onAuthComplete?.();
+      navigate('/', { replace: true });
       window.location.hash = '';
-      window.location.reload();
-    } else {
-      alert(result.message || 'Login failed');
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Authentication failed. Please try again.' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('google login click');
+  const handleGoogleLogin = async () => {
+    setMessage(null);
+    setSubmitting(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Google sign-in could not be started.' });
+      setSubmitting(false);
+    }
   };
+
+  const changeMode = (nextMode: LoginMode) => {
+    setMessage(null);
+    setMode(nextMode);
+  };
+
+  const title = mode === 'signup' ? 'Create account' : mode === 'forgotPassword' ? 'Reset password' : mode === 'resetPassword' ? 'Choose a new password' : 'Log in';
 
   return (
     <div className="login-page">
@@ -36,48 +104,69 @@ const Login = () => {
       <div className="form-panel">
         <div className="form-inner">
           <h1>A2W</h1>
-          <h2>Log in</h2>
+          <h2>{title}</h2>
 
           <form onSubmit={handleSubmit} className="login-form">
-            <label>
-              Username
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                required
-              />
-            </label>
-
-            <label>
-              Password
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                required
-              />
-            </label>
-
-            <div className="form-actions">
-              <label className="checkbox-label">
-                <input type="checkbox" /> Remember Me
+            {mode === 'signup' && (
+              <label>
+                Full name
+                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" required />
               </label>
-              <a href="#" className="forgot-link">Forgot Password?</a>
-            </div>
+            )}
 
-            <button type="submit" className="primary-btn">Log in</button>
+            {mode !== 'resetPassword' && (
+              <label>
+                Email
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+              </label>
+            )}
 
-            <div className="divider">Or</div>
+            {(mode === 'login' || mode === 'signup' || mode === 'resetPassword') && (
+              <label>
+                {mode === 'resetPassword' ? 'New password' : 'Password'}
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  minLength={6}
+                  required
+                />
+              </label>
+            )}
 
-            <button type="button" onClick={handleGoogleLogin} className="google-btn">
-              <img src="/src/assets/images/google.png" alt="Google" />
-              Log in with Google
+            {mode === 'resetPassword' && (
+              <label>
+                Confirm new password
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" minLength={6} required />
+              </label>
+            )}
+
+            {mode === 'login' && (
+              <div className="form-actions">
+                <button type="button" className="forgot-link" onClick={() => changeMode('forgotPassword')}>Forgot password?</button>
+              </div>
+            )}
+
+            {message && <p className={`auth-message ${message.type}`} role={message.type === 'error' ? 'alert' : 'status'}>{message.text}</p>}
+
+            <button type="submit" className="primary-btn" disabled={submitting}>
+              {submitting ? 'Please wait...' : mode === 'signup' ? 'Create account' : mode === 'forgotPassword' ? 'Send reset link' : mode === 'resetPassword' ? 'Update password' : 'Log in'}
             </button>
 
-            <button type="button" className="secondary-btn">Sign up</button>
+            {(mode === 'login' || mode === 'signup') && (
+              <>
+                <div className="divider">Or</div>
+                <button type="button" onClick={handleGoogleLogin} className="google-btn" disabled={submitting}>
+                  <img src={googleIcon} alt="" />
+                  Continue with Google
+                </button>
+              </>
+            )}
+
+            {mode === 'login' && <button type="button" className="secondary-btn" onClick={() => changeMode('signup')}>Create an account</button>}
+            {mode === 'signup' && <button type="button" className="secondary-btn" onClick={() => changeMode('login')}>Already have an account? Log in</button>}
+            {(mode === 'forgotPassword' || mode === 'resetPassword') && <button type="button" className="secondary-btn" onClick={() => changeMode('login')}>Back to log in</button>}
           </form>
         </div>
       </div>
