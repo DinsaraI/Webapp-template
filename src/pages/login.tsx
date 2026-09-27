@@ -59,7 +59,6 @@ const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
         if (error) throw error;
         if (data.session) {
           navigate('/', { replace: true });
-          window.location.hash = '';
         } else {
           setMessage({ type: 'success', text: 'Account created. Check your email to confirm your address, then sign in.' });
           setMode('login');
@@ -71,7 +70,6 @@ const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
       if (error) throw error;
       onAuthComplete?.();
       navigate('/', { replace: true });
-      window.location.hash = '';
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Authentication failed. Please try again.' });
     } finally {

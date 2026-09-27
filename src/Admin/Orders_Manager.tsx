@@ -3,41 +3,52 @@ import type { Order } from './types';
 
 interface Props {
 	orders: Order[];
+	loading: boolean;
+	error: string;
 	onOpenConfirm: (o: Order) => void;
 	onDecline: (orderId: string) => void;
 }
 
-const Orders_Manager: React.FC<Props> = ({ orders, onOpenConfirm, onDecline }) => {
+const Orders_Manager: React.FC<Props> = ({ orders, loading, error, onOpenConfirm, onDecline }) => {
 	return (
 		<section>
-			<h1>Master Orders Manager</h1>
-			<table className="orders-table">
-				<thead>
-					<tr>
-						<th>Order ID</th>
-						<th>Customer</th>
-						<th>Vendor</th>
-						<th>Amount</th>
-						<th>Status</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{orders.map((o) => (
-						<tr key={o.id} className={o.status === 'Declined' ? 'declined' : ''}>
-							<td>{o.id}</td>
-							<td>{o.customer}</td>
-							<td>{o.vendor}</td>
-							<td>${o.amount}</td>
-							<td>{o.status}{o.eta ? ` • ETA: ${o.eta}` : ''}</td>
-							<td>
-								{o.status === 'Paid' && <button onClick={() => onOpenConfirm(o)}>Confirm</button>}
-								{o.status !== 'Declined' && <button onClick={() => onDecline(o.id)}>Decline/Refund</button>}
-							</td>
+			<h1>Order Manager</h1>
+			{loading && <p role="status">Loading orders...</p>}
+			{error && <p role="alert">{error}</p>}
+			{!loading && !error && orders.length === 0 && <p>No active orders</p>}
+			{!loading && !error && orders.length > 0 && (
+				<div className="admin-table-scroll">
+				<table className="orders-table">
+					<thead>
+						<tr>
+							<th>Order ID</th>
+							<th>Customer & Contact</th>
+							<th>Item(s)</th>
+							<th>Status</th>
+							<th>Actions</th>
 						</tr>
-					))}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{orders.map((order) => (
+							<tr key={order.id}>
+								<td>ORD-{String(order.order_number).padStart(6, '0')}</td>
+								<td>
+									<strong>{order.customer_name}</strong>
+									<div>{order.customer_email}</div>
+									<div>{order.customer_phone}</div>
+								</td>
+								<td>{order.items.map((item) => `${item.title} × ${item.quantity}`).join(', ')}</td>
+								<td>{order.status}{order.eta ? ` · ETA: ${order.eta}` : ''}</td>
+								<td>
+									{(order.status === 'Pending' || order.status === 'Paid') && <button onClick={() => onOpenConfirm(order)}>Confirm</button>}
+									<button onClick={() => onDecline(order.id)}>Decline/Refund</button>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+				</div>
+			)}
 		</section>
 	);
 };

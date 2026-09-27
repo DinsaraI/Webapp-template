@@ -69,7 +69,7 @@
 @media (max-width: 768px) {
   .hero {
     padding: 24px 5%;
-    min-height: calc(100vh - 90px);
+    min-height: calc(100svh - 72px);
   }
   .hero-content h1 {
     font-size: 1.6rem;

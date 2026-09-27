@@ -79,15 +79,9 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
         className="logo"
         role="button"
         tabIndex={0}
-        onClick={() => {
-          navigate('/');
-          window.location.hash = '';
-        }}
+        onClick={() => { setMobileOpen(false); navigate('/'); }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            navigate('/');
-            window.location.hash = '';
-          }
+          if (e.key === 'Enter') { setMobileOpen(false); navigate('/'); }
         }}
       >
         A2W
@@ -161,7 +155,9 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
         {/* Mobile-only button: toggles panel with search + links */}
         <button
           className="mobile-menu-btn"
-          aria-label="Open menu"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-navigation"
           onClick={() => setMobileOpen((v) => !v)}
         >
           <Menu size={20} strokeWidth={1.5} />
@@ -169,7 +165,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
       </div>
 
       {/* Mobile panel: appears below the navbar when mobileOpen is true */}
-      <div className={`mobile-panel ${mobileOpen ? 'open' : ''}`}>
+      <div id="mobile-navigation" className={`mobile-panel ${mobileOpen ? 'open' : ''}`}>
         <div className="mobile-panel-inner">
           <input
             type="text"
@@ -180,11 +176,10 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
           />
 
           <ul className="mobile-links">
-            <li>
-              <button className="mobile-cart" onClick={() => openCart()}>Open cart</button>
-            </li>
-            <li><Link to="/contact">CONTACT US</Link></li>
-            <li><Link to="/">MENU</Link></li>
+            <li><Link to="/shop" onClick={() => setMobileOpen(false)}>SHOP NOW</Link></li>
+            <li><Link to="/contact" onClick={() => setMobileOpen(false)}>CONTACT US</Link></li>
+            <li><Link to="/" onClick={() => setMobileOpen(false)}>MENU</Link></li>
+            <li><button className="mobile-cart" onClick={() => { setMobileOpen(false); openCart(); }}>Open cart</button></li>
           </ul>
         </div>
       </div>

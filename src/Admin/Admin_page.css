@@ -24,7 +24,7 @@
 	font-family: 'Montserrat', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
 
-.admin-page-root .admin-main{flex:1;padding:36px}
+.admin-page-root .admin-main{flex:1;min-width:0;padding:36px}
 
 .admin-page-root .dash header{display:flex;justify-content:space-between;align-items:center}
 .admin-page-root .dash header h1{margin:0;font-size:28px}
@@ -33,14 +33,17 @@
 .admin-page-root .logout-btn{padding:8px 16px;background:#e5e7eb;color:var(--accent);border:1px solid #d1d5db;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.3s ease}
 .admin-page-root .logout-btn:hover{background:#d1d5db;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 
-.admin-page-root .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:20px}
+.admin-page-root .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:20px}
 .admin-page-root .card{background:linear-gradient(180deg, var(--surface), rgba(255,255,255,0.9));padding:20px;border-radius:12px;box-shadow:var(--shadow);min-width:160px;border:1px solid rgba(15,23,42,0.03)}
 .admin-page-root .card h3{margin:0;font-size:13px;color:var(--muted);font-weight:600}
 .admin-page-root .card p{margin-top:8px;font-size:20px;font-weight:700;color:var(--accent)}
 
 .admin-page-root .notifications{margin-top:24px;background:var(--surface);padding:14px;border-radius:10px;box-shadow:var(--shadow)}
 .admin-page-root .notifications h4{margin:0 0 6px 0}
-.admin-page-root .notifications ul{margin:8px 0 0 18px;color:var(--muted)}
+.admin-page-root .notifications ul{list-style:none;margin:8px 0 0;padding:0;color:var(--muted)}
+.admin-page-root .notifications li{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid rgba(15,23,42,0.06)}
+.admin-page-root .notifications time{flex-shrink:0;font-size:12px;color:var(--muted)}
+.admin-page-root .notifications-empty{margin:8px 0;color:var(--muted)}
 
 .admin-page-root .orders-table{width:100%;border-collapse:collapse;margin-top:18px;background:transparent}
 .admin-page-root .orders-table thead th{background:transparent;text-transform:uppercase;font-size:12px;color:var(--muted);padding:12px 10px;text-align:left}
@@ -49,9 +52,6 @@
 .admin-page-root .orders-table tbody tr:hover td{background:linear-gradient(90deg, rgba(240,240,255,0.6), rgba(255,255,255,0.6))}
 .admin-page-root .orders-table button{margin-right:8px;padding:8px 10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:white;cursor:pointer}
 .admin-page-root .orders-table button.primary{background:var(--gold);color:white;border:0}
-
-.admin-page-root .vendor-section{display:flex;gap:24px;align-items:flex-start}
-.admin-page-root .vendor-card{background:var(--surface);padding:14px;border-radius:10px;margin-bottom:12px;box-shadow:var(--shadow)}
 
 .admin-page-root .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-top:16px}
 .admin-page-root .product-card{background:linear-gradient(180deg,var(--surface),#fff);padding:16px;border-radius:12px;min-height:140px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between}
@@ -63,7 +63,7 @@
 .admin-page-root .ledger td{padding:12px 10px;border-bottom:1px solid rgba(15,23,42,0.04);background:var(--surface)}
 
 .admin-page-root .modal-backdrop{position:fixed;inset:0;background:linear-gradient(rgba(2,6,23,0.45), rgba(2,6,23,0.45));display:flex;align-items:center;justify-content:center;padding:20px}
-.admin-page-root .modal{background:var(--surface);padding:20px;border-radius:12px;min-width:360px;box-shadow:0 20px 60px rgba(2,6,23,0.6)}
+.admin-page-root .modal{background:var(--surface);padding:20px;border-radius:12px;width:min(100%,420px);min-width:0;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 20px 60px rgba(2,6,23,0.6)}
 .admin-page-root .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .admin-page-root .modal .primary{background:var(--gold);color:white;border:0;padding:10px 14px;border-radius:8px}
 
@@ -73,5 +73,8 @@
 .admin-page-root input[type="checkbox"],
 .admin-page-root input{padding:8px;border:1px solid rgba(15,23,42,0.06);border-radius:8px}
 
-@media(max-width:1100px){.admin-page-root .metrics{grid-template-columns:repeat(2,1fr)}.admin-page-root .vendor-section{flex-direction:column}}
-@media(max-width:700px){.admin-page-root{flex-direction:column}.admin-page-root .admin-main{padding:18px}.admin-page-root .metrics{grid-template-columns:1fr}}
+@media(max-width:1100px){.admin-page-root .metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.admin-page-root .admin-main{padding:18px}.admin-page-root .metrics{grid-template-columns:minmax(0,1fr)}.admin-page-root .dash header{align-items:flex-start;gap:16px}.admin-page-root .dash header h1{font-size:24px}}
+
+.admin-table-scroll{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.admin-page-root .orders-table,.admin-page-root .ledger{min-width:680px}

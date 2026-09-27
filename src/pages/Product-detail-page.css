@@ -29,3 +29,12 @@
   .pd-inner{grid-template-columns:1fr}
   .pd-main-image{height:380px}
 }
+
+@media(max-width:600px){
+  .product-detail-page{padding-top:82px}
+  .pd-main{margin:12px auto;padding:12px}
+  .pd-main-image{height:min(92vw,380px);border-radius:8px}
+  .pd-meta{padding:8px 2px}
+  .pd-title{font-size:20px;overflow-wrap:anywhere}
+  .pd-actions .btn{min-height:44px}
+}

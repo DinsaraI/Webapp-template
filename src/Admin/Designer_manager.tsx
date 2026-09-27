@@ -70,7 +70,8 @@ const Designer_manager: React.FC<Props> = ({ designers, onSuspend, onBan, onWarn
         </div>
       </div>
 
-      <table className="designers-table">
+    <div className="admin-table-scroll">
+    <table className="designers-table">
         <thead>
           <tr>
             <th>Brand</th>
@@ -126,7 +127,8 @@ const Designer_manager: React.FC<Props> = ({ designers, onSuspend, onBan, onWarn
             </tr>
           ))}
         </tbody>
-      </table>
+    </table>
+    </div>
 
       {warningModal && (
         <div className="modal-backdrop">

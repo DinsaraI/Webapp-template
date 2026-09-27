@@ -10,6 +10,7 @@ const Finances: React.FC<Props> = ({ transactions, markTransferred }) => {
 	return (
 		<section>
 			<h1>Financial Ledger & Payout Settlement</h1>
+			<div className="admin-table-scroll">
 			<table className="ledger">
 				<thead>
 					<tr>
@@ -17,7 +18,7 @@ const Finances: React.FC<Props> = ({ transactions, markTransferred }) => {
 						<th>Order</th>
 						<th>Gross</th>
 						<th>Commission</th>
-						<th>Net to Vendor</th>
+						<th>Net Payout</th>
 						<th>Transferred</th>
 					</tr>
 				</thead>
@@ -34,6 +35,7 @@ const Finances: React.FC<Props> = ({ transactions, markTransferred }) => {
 					))}
 				</tbody>
 			</table>
+			</div>
 		</section>
 	);
 };

@@ -104,7 +104,7 @@
 @media (max-width: 600px) {
   .storefront-main {
     width: min(1240px, calc(100% - 32px));
-    padding-top: 36px;
+    padding-top: 28px;
   }
 
   .storefront-heading h1 {

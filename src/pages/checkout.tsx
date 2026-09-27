@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../assets/components/navbar';
 import Footer from '../assets/components/footer';
+import { clearCart, getCart } from '../services/cartService';
+import type { CartItem } from '../services/cartService';
+import { createOrder } from '../services/orderService';
 import './checkout.css';
 
 type Shipping = {
@@ -20,12 +23,21 @@ type Payment = {
 };
 
 const STORAGE_KEY = 'a2w_checkout_info_v1';
+const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
+  style: 'currency',
+  currency: 'LKR',
+  maximumFractionDigits: 2,
+}).format(price);
 
 const Checkout: React.FC = () => {
   const [shipping, setShipping] = useState<Partial<Shipping>>({});
   const [payment, setPayment] = useState<Partial<Payment>>({});
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [editingShipping, setEditingShipping] = useState(false);
   const [editingPayment, setEditingPayment] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [orderMessage, setOrderMessage] = useState('');
 
   useEffect(() => {
     try {
@@ -35,13 +47,20 @@ const Checkout: React.FC = () => {
         if (parsed.shipping) setShipping(parsed.shipping);
         if (parsed.payment) setPayment(parsed.payment);
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, []);
 
-  const saveToStorage = (s: Partial<Shipping>, p: Partial<Payment>) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ shipping: s, payment: p }));
+  useEffect(() => {
+    const syncCart = () => setCartItems(getCart());
+    syncCart();
+    window.addEventListener('a2w:cart-updated', syncCart);
+    return () => window.removeEventListener('a2w:cart-updated', syncCart);
+  }, []);
+
+  const saveToStorage = (s: Partial<Shipping>) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ shipping: s }));
   };
 
   const handleShippingSubmit = (e: React.FormEvent) => {
@@ -58,7 +77,7 @@ const Checkout: React.FC = () => {
       phone: String(data.get('phone') || '').trim(),
     };
     setShipping(s);
-    saveToStorage(s, payment);
+    saveToStorage(s);
     setEditingShipping(false);
   };
 
@@ -73,9 +92,46 @@ const Checkout: React.FC = () => {
       cvv: String(data.get('cvv') || '').trim(),
     };
     setPayment(p);
-    saveToStorage(shipping, p);
     setEditingPayment(false);
   };
+
+  const handlePlaceOrder = async () => {
+    const customerName = shipping.fullName?.trim() ?? '';
+    const customerEmail = shipping.email?.trim() ?? '';
+    const customerPhone = shipping.phone?.trim() ?? '';
+    if (!customerName || !customerEmail || !customerPhone) {
+      setOrderError('Enter your name, email, and phone number before placing the order.');
+      return;
+    }
+    if (cartItems.length === 0) {
+      setOrderError('Your cart is empty.');
+      return;
+    }
+
+    setIsPlacingOrder(true);
+    setOrderError('');
+    setOrderMessage('');
+    try {
+      const order = await createOrder({
+        customerName,
+        customerEmail,
+        customerPhone,
+        items: cartItems.map((item) => ({ productId: item.id, quantity: item.qty ?? 1 })),
+      });
+      clearCart();
+      setCartItems([]);
+      setOrderMessage(`Order ORD-${String(order.order_number).padStart(6, '0')} placed successfully.`);
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : 'The order could not be placed.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
+
+  const subtotal = cartItems.reduce((total, item) => {
+    const price = Number(item.price.replace(/[^\d.-]/g, ''));
+    return total + (Number.isFinite(price) ? price : 0) * (item.qty ?? 1);
+  }, 0);
 
   const maskCard = (n?: string) => {
     if (!n) return '';
@@ -96,11 +152,11 @@ const Checkout: React.FC = () => {
             <form className="co-form" onSubmit={(e) => e.preventDefault()}>
               <label>
                 Email
-                <input name="email" type="email" defaultValue={shipping.email || ''} onBlur={(e) => setShipping((s) => ({ ...s, email: e.target.value }))} />
+                <input name="email" type="email" value={shipping.email || ''} onChange={(e) => setShipping((s) => ({ ...s, email: e.target.value }))} />
               </label>
               <label>
                 Phone
-                <input name="phone" type="tel" defaultValue={shipping.phone || ''} onBlur={(e) => setShipping((s) => ({ ...s, phone: e.target.value }))} />
+                <input name="phone" type="tel" value={shipping.phone || ''} onChange={(e) => setShipping((s) => ({ ...s, phone: e.target.value }))} />
               </label>
             </form>
 
@@ -164,11 +220,22 @@ const Checkout: React.FC = () => {
             <h2>Order summary</h2>
             <div className="summary-card">
               <div className="summary-row"><span>Item</span><span>Price</span></div>
-              <div className="summary-row"><span>Custom T-shirt</span><span>2000 LKR</span></div>
-              <div className="summary-total"><span>Total</span><span>2000 LKR</span></div>
+              {cartItems.length === 0 ? (
+                <p>Your cart is empty.</p>
+              ) : cartItems.map((item) => (
+                <div className="summary-row" key={item.id}>
+                  <span>{item.name} × {item.qty ?? 1}</span>
+                  <span>{item.price}</span>
+                </div>
+              ))}
+              <div className="summary-total"><span>Total</span><span>{formatPrice(subtotal)}</span></div>
 
               <div className="checkout-actions">
-                <button className="btn-primary">Place order</button>
+                <button className="btn-primary" type="button" onClick={() => void handlePlaceOrder()} disabled={isPlacingOrder || cartItems.length === 0}>
+                  {isPlacingOrder ? 'Placing order...' : 'Place order'}
+                </button>
+                {orderError && <p role="alert">{orderError}</p>}
+                {orderMessage && <p role="status">{orderMessage}</p>}
               </div>
             </div>
           </aside>

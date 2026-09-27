@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Admin_page.css';
 import Admin_sidenavbar from './Admin_sidenavbar';
 import Orders_Manager from './Orders_Manager';
-import Vendor_approvals from './Vendor_approvals';
 import Global_inventory from './Global_inventory';
 import Finances from './Finances';
 import Designer_manager from './Designer_manager';
-import type { Order, Vendor, Transaction, Designer } from './types';
+import type { Order, Transaction, Designer } from './types';
 import { logout } from '../services/authService';
+import { getProducts } from '../services/productService';
+import { getOrders, updateOrderStatus } from '../services/orderService';
+import { supabase } from '../supabaseClient';
+import type { Product } from '../types/product';
 
-const mockOrders: Order[] = [
-	{ id: 'ORD-1001', customer: 'Alice', vendor: 'LuxeDesign', amount: 420, status: 'Paid' },
-	{ id: 'ORD-1002', customer: 'Brian', vendor: 'StudioF', amount: 1250, status: 'Confirmed', eta: '2026-06-20' },
-	{ id: 'ORD-1003', customer: 'Cindy', vendor: 'ModaPro', amount: 320, status: 'Paid' },
-];
-
-const mockVendors: Vendor[] = [
-	{ id: 'V-900', brand: 'NewCraft', bio: 'Handmade silk pieces', approved: false },
-	{ id: 'V-901', brand: 'HeritageCo', bio: 'Family-run atelier', approved: true },
-];
+interface AdminNotification {
+	id: number;
+	message: string;
+	createdAt: Date;
+}
 
 const mockTransactions: Transaction[] = [
 	{ id: 'T-1', orderId: 'ORD-1002', gross: 1250, commissionPct: 12 },
@@ -34,17 +33,73 @@ const mockDesigners: Designer[] = [
 ];
 
 const Admin_page: React.FC = () => {
-	const [view, setView] = useState<'dashboard' | 'orders' | 'vendors' | 'inventory' | 'finances' | 'designers'>('dashboard');
+	const navigate = useNavigate();
+	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'finances' | 'designers'>('dashboard');
 
-	const [orders, setOrders] = useState<Order[]>(mockOrders);
-	const [vendors, setVendors] = useState<Vendor[]>(mockVendors);
+	const [orders, setOrders] = useState<Order[]>([]);
+	const [ordersLoading, setOrdersLoading] = useState(true);
+	const [ordersError, setOrdersError] = useState('');
 	const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
 	const [designers, setDesigners] = useState<Designer[]>(mockDesigners);
-
+	const [products, setProducts] = useState<Product[]>([]);
+	const [notifications, setNotifications] = useState<AdminNotification[]>([]);
 
 	// Modal state for confirming order ETA
 	const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
 	const [etaInput, setEtaInput] = useState('');
+
+	useEffect(() => {
+		let mounted = true;
+		const loadOrders = async () => {
+			try {
+				const currentOrders = await getOrders();
+				if (mounted) {
+					setOrders(currentOrders);
+					setOrdersError('');
+				}
+			} catch (error) {
+				if (mounted) setOrdersError(error instanceof Error ? error.message : 'Orders could not be loaded.');
+			} finally {
+				if (mounted) setOrdersLoading(false);
+			}
+		};
+		const channel = supabase
+			.channel('admin-live-updates')
+			.on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+				const product = (payload.eventType === 'DELETE' ? payload.old : payload.new) as { title?: string };
+				const action = payload.eventType === 'INSERT' ? 'added' : payload.eventType === 'DELETE' ? 'removed' : 'updated';
+				setNotifications((current) => [{
+					id: Date.now(),
+					message: `Product ${product.title ?? ''} ${action}`.trim(),
+					createdAt: new Date(),
+				}, ...current].slice(0, 10));
+				void getProducts().then((currentProducts) => {
+					if (mounted) setProducts(currentProducts);
+				}).catch((error: unknown) => console.error('Unable to refresh product metrics:', error));
+			})
+			.on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+				const order = (payload.eventType === 'DELETE' ? payload.old : payload.new) as { order_number?: number };
+				const orderLabel = order.order_number ? `ORD-${String(order.order_number).padStart(6, '0')}` : 'An order';
+				const action = payload.eventType === 'INSERT' ? 'received' : payload.eventType === 'DELETE' ? 'removed' : 'updated';
+				setNotifications((current) => [{
+					id: Date.now(),
+					message: `${orderLabel} ${action}`,
+					createdAt: new Date(),
+				}, ...current].slice(0, 10));
+				void loadOrders();
+			})
+			.subscribe();
+
+		void loadOrders();
+		void getProducts().then((currentProducts) => {
+			if (mounted) setProducts(currentProducts);
+		}).catch((error: unknown) => console.error('Unable to load product metrics:', error));
+
+		return () => {
+			mounted = false;
+			void supabase.removeChannel(channel);
+		};
+	}, []);
 
 	const handleLogout = async () => {
 		const { error } = await logout();
@@ -53,7 +108,7 @@ const Admin_page: React.FC = () => {
 			return;
 		}
 		localStorage.removeItem('adminAuthenticated');
-		window.location.hash = '';
+		navigate('/', { replace: true });
 	};
 
 	const openConfirm = (o: Order) => {
@@ -63,24 +118,25 @@ const Admin_page: React.FC = () => {
 
 	const handleConfirm = () => {
 		if (!confirmingOrder) return;
-		setOrders((prev) => prev.map((o) => o.id === confirmingOrder.id ? { ...o, status: 'Confirmed', eta: etaInput } : o));
-		console.log(`SMS -> ${confirmingOrder.customer}: Your order ${confirmingOrder.id} ETA ${etaInput}`);
-		setConfirmingOrder(null);
+		void updateOrderStatus(confirmingOrder.id, 'Confirmed', etaInput || undefined)
+			.then(() => getOrders())
+			.then((currentOrders) => {
+				setOrders(currentOrders);
+				setOrdersError('');
+				setConfirmingOrder(null);
+				console.log(`SMS -> ${confirmingOrder.customer_name}: Your order ORD-${String(confirmingOrder.order_number).padStart(6, '0')} ETA ${etaInput}`);
+			})
+			.catch((error: unknown) => setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.'));
 	};
 
-	const handleDecline = (orderId: string) => {
-		setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: 'Declined' } : o));
-	};
-
-	const approveVendor = (id: string) => {
-		setVendors((v) => v.map((x) => x.id === id ? { ...x, approved: true } : x));
-	};
-	const rejectVendor = (id: string) => {
-		setVendors((v) => v.filter((x) => x.id !== id));
-	};
-
-	const toggleSuspend = (id: string) => {
-		setVendors((v) => v.map((x) => x.id === id ? { ...x, suspended: !x.suspended } : x));
+	const handleDecline = async (orderId: string) => {
+		try {
+			await updateOrderStatus(orderId, 'Declined');
+			setOrders(await getOrders());
+			setOrdersError('');
+		} catch (error) {
+			setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.');
+		}
 	};
 
 	const markTransferred = (id: string) => {
@@ -104,10 +160,10 @@ const Admin_page: React.FC = () => {
 		setDesigners((d) => d.map((x) => x.id === id ? { ...x, status: 'active' } : x));
 	};
 
-	const totalGMV = transactions.reduce((s, t) => s + t.gross, 0);
-	const platformCommission = transactions.reduce((s, t) => s + (t.gross * t.commissionPct) / 100, 0);
-	const activeCustomers = 1245;
-	const activeVendors = vendors.filter((v) => v.approved && !v.suspended).length;
+	const activeOrders = orders.length;
+	const activeProducts = products.filter((product) => product.stock > 0).length;
+	const totalRevenue = orders.reduce((total, order) => total + order.amount, 0);
+	const formattedRevenue = `$${totalRevenue.toLocaleString()}`;
 
 	return (
 		<div className="admin-page-root">
@@ -126,39 +182,39 @@ const Admin_page: React.FC = () => {
 
 						<div className="metrics">
 							<div className="card">
-								<h3>Total GMV</h3>
-								<p>${totalGMV.toLocaleString()}</p>
+								<h3>Active Orders</h3>
+								<p>{activeOrders}</p>
 							</div>
 							<div className="card">
-								<h3>Platform Commission</h3>
-								<p>${platformCommission.toFixed(2)}</p>
+								<h3>Items for Sale</h3>
+								<p>{activeProducts}</p>
 							</div>
 							<div className="card">
-								<h3>Active Customers</h3>
-								<p>{activeCustomers}</p>
-							</div>
-							<div className="card">
-								<h3>Active Vendors</h3>
-								<p>{activeVendors}</p>
+								<h3>Total Revenue</h3>
+								<p>{formattedRevenue}</p>
 							</div>
 						</div>
 
-						<div className="notifications">
+						<div className="notifications" aria-live="polite">
 							<h4>Live Notifications</h4>
-							<ul>
-								<li>New Vendor Registration Pending Approval</li>
-								<li>Order ORD-1004: Payment requires manual review</li>
-							</ul>
+							{notifications.length === 0 ? (
+								<p className="notifications-empty">No new activity.</p>
+							) : (
+								<ul>
+									{notifications.map((notification) => (
+										<li key={notification.id}>
+											<span>{notification.message}</span>
+											<time>{notification.createdAt.toLocaleTimeString()}</time>
+										</li>
+									))}
+								</ul>
+							)}
 						</div>
 					</section>
 				)}
 
 				{view === 'orders' && (
-					<Orders_Manager orders={orders} onOpenConfirm={openConfirm} onDecline={handleDecline} />
-				)}
-
-				{view === 'vendors' && (
-					<Vendor_approvals vendors={vendors} approveVendor={approveVendor} rejectVendor={rejectVendor} toggleSuspend={toggleSuspend} />
+					<Orders_Manager orders={orders} loading={ordersLoading} error={ordersError} onOpenConfirm={openConfirm} onDecline={handleDecline} />
 				)}
 
 				{view === 'inventory' && (
@@ -177,7 +233,7 @@ const Admin_page: React.FC = () => {
 		{confirmingOrder && (
 			<div className="modal-backdrop">
 				<div className="modal">
-					<h3>Confirm {confirmingOrder.id}</h3>
+					<h3>Confirm ORD-{String(confirmingOrder.order_number).padStart(6, '0')}</h3>
 					<label>Estimated Time of Arrival</label>
 					<input type="date" value={etaInput} onChange={(e) => setEtaInput(e.target.value)} />
 					<div className="modal-actions">

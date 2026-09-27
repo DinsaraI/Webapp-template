@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './product-card.css';
 
 type ProductCardProps = {
@@ -27,10 +28,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
 	onClick,
 	id,
 }) => {
+	const navigate = useNavigate();
 	const days = daysSince(addedAt);
-	const handleClick = (e: React.MouseEvent) => {
+	const handleClick = () => {
 		if (onClick) return onClick();
-		if (id) window.location.hash = `#product/${id}`;
+		if (id) navigate(`/product/${id}`);
 	};
 
 	return (
@@ -39,7 +41,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 			role={onClick || id ? 'button' : undefined}
 			tabIndex={onClick || id ? 0 : -1}
 			onClick={handleClick}
-			onKeyDown={(e) => e.key === 'Enter' && (onClick ? onClick() : id && (window.location.hash = `#product/${id}`))}
+			onKeyDown={(e) => e.key === 'Enter' && handleClick()}
 		>
 			<div
 				className="pc-media"

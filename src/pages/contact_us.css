@@ -117,3 +117,11 @@
 		order: 2;
 	}
 }
+
+@media (max-width: 600px) {
+	.contact-page { padding-top: 82px; }
+	.about-section, .contact-section { padding: 32px 16px; }
+	.about-inner h1 { font-size: 28px; }
+	.contact-inner { gap: 20px; }
+	.contact-details { padding: 16px; }
+}

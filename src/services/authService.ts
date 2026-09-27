@@ -1,5 +1,8 @@
 import { supabase } from '../supabaseClient';
 
+const appRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL?.trim()
+  || 'https://dinsarai.github.io/Webapp-template/';
+
 export function login(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password });
 }
@@ -8,7 +11,10 @@ export function register(email: string, password: string, fullName: string) {
   return supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: { full_name: fullName },
+      emailRedirectTo: appRedirectUrl,
+    },
   });
 }
 
@@ -19,13 +25,13 @@ export function logout() {
 export function signInWithGoogle() {
   return supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/` },
+    options: { redirectTo: appRedirectUrl },
   });
 }
 
 export function requestPasswordReset(email: string) {
   return supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/`,
+    redirectTo: appRedirectUrl,
   });
 }
 

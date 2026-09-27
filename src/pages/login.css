@@ -156,3 +156,9 @@
     min-height: 55vh;
   }
 }
+
+@media (max-width: 600px) {
+  .hero-panel { min-height: 30vh; }
+  .form-panel { padding: 24px 16px; }
+  .form-inner { width: 100%; padding: 24px; border-radius: 12px; }
+}

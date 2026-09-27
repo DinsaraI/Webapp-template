@@ -44,3 +44,12 @@
   .co-columns{flex-direction:column}
   .co-right{width:100%}
 }
+
+@media(max-width:600px){
+  .checkout-page{padding-top:82px}
+  .co-main{margin:12px auto;padding:12px}
+  .co-columns{gap:16px}
+  .co-right{min-width:0}
+  .summary-card{overflow-wrap:anywhere}
+  .checkout-actions .btn-primary{width:100%;min-height:44px}
+}

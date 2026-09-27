@@ -205,7 +205,8 @@
 }
 
 .designer-manager-root .modal-backdrop{position:fixed;inset:0;background:linear-gradient(rgba(2,6,23,0.45), rgba(2,6,23,0.45));display:flex;align-items:center;justify-content:center;padding:20px}
-.designer-manager-root .modal{background:#fff;padding:20px;border-radius:12px;min-width:360px;box-shadow:0 20px 60px rgba(2,6,23,0.15)}
+.designer-manager-root .modal{background:#fff;padding:20px;border-radius:12px;width:min(100%,420px);min-width:0;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 20px 60px rgba(2,6,23,0.15)}
+.designer-manager-root .designers-table{min-width:900px}
 .designer-manager-root .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .designer-manager-root .modal .primary{background:#0f172a;color:#fff;border:0;padding:10px 14px;border-radius:8px}
 
@@ -249,4 +250,12 @@
   .designer-manager-root .action-buttons button {
     width: 100%;
   }
+}
+
+@media (max-width: 600px) {
+  .designer-manager-root .designer-header h1 { font-size: 24px; }
+  .designer-manager-root .designer-stats { gap: 10px; }
+  .designer-manager-root .stat-card { padding: 12px; }
+  .designer-manager-root .modal { padding: 16px; }
+  .designer-manager-root .modal-actions { flex-wrap: wrap; }
 }

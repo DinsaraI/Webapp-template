@@ -1,28 +1,23 @@
-export type OrderStatus = 'Paid' | 'Confirmed' | 'Shipped' | 'Declined' | 'Cancellation Pending';
+export type OrderStatus = 'Pending' | 'Paid' | 'Confirmed' | 'Shipped' | 'Declined' | 'Cancellation Pending';
+
+export interface OrderItem {
+  productId: string;
+  title: string;
+  quantity: number;
+  unitPrice: number;
+}
 
 export interface Order {
   id: string;
-  customer: string;
-  vendor: string;
+  order_number: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  items: OrderItem[];
   amount: number;
   status: OrderStatus;
-  eta?: string;
-}
-
-export interface Vendor {
-  id: string;
-  brand: string;
-  bio?: string;
-  approved: boolean;
-  suspended?: boolean;
-}
-
-export interface Product {
-  id: string;
-  title: string;
-  vendor: string;
-  price: number;
-  removed?: boolean;
+  eta?: string | null;
+  created_at: string;
 }
 
 export interface Transaction {
