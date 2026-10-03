@@ -10,23 +10,73 @@ import Navbar from './assets/components/navbar';
 import StoreFront from './pages/StoreFront';
 import ContactUs from './pages/contact_us';
 import ProductDetailPage from './pages/Product-detail-page';
+import SearchResults from './pages/SearchResults';
 import Checkout from './pages/checkout';
 import { isAdminUser, logout as logoutService } from './services/authService';
+import { getProducts } from './services/productService';
+import type { Product } from './types/product';
 import { supabase } from './supabaseClient';
-import Hero from './assets/components/hero';
-import CardSlider from './assets/components/card_slider';
+import ItemSlider from './assets/components/itemslider';
 import Hero2 from './assets/components/hero2';
+import HeroCampaigns from './assets/components/hero-campaigns';
 import Footer from './assets/components/footer';
 import Login from './pages/login';
+import Profile from './pages/Profile';
 import Admin_page from './Admin/Admin_page';
 import Admin_login from './Admin/Admin_login';
+import { consumeCheckoutRedirect, setCheckoutRedirect } from './services/checkoutRedirect';
 
 import './App.css';
+
+function LatestDrops() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    getProducts()
+      .then((items) => {
+        if (active) setProducts(items);
+      })
+      .catch((error: unknown) => {
+        if (active) setErrorMessage(error instanceof Error ? error.message : 'Products could not be loaded.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  return (
+    <section className="latest-drops">
+      <h2>Latest Drops</h2>
+      {loading && <p role="status">Loading products...</p>}
+      {errorMessage && <p role="alert">{errorMessage}</p>}
+      {!loading && !errorMessage && products.length === 0 && <p>No products are available yet.</p>}
+      {!loading && !errorMessage && products.length > 0 && <ItemSlider items={products} />}
+    </section>
+  );
+}
+
+function CheckoutGate({ authReady, isSignedIn }: { authReady: boolean; isSignedIn: boolean }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authReady || isSignedIn) return;
+    setCheckoutRedirect();
+    navigate('/login', { replace: true });
+  }, [authReady, isSignedIn, navigate]);
+
+  if (!authReady || !isSignedIn) return <p role="status">Checking your account...</p>;
+  return <Checkout />;
+}
 
 function AppShell() {
   const navigate = useNavigate();
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
@@ -35,6 +85,7 @@ function AppShell() {
     const syncSession = (session: { user: { id: string } } | null) => {
       currentUserId = session?.user.id ?? null;
       setIsSignedIn(Boolean(session?.user));
+      setAuthReady(true);
       if (!session?.user) {
         setAdminAuthenticated(false);
         return;
@@ -57,6 +108,8 @@ function AppShell() {
     });
     void supabase.auth.getSession().then(({ data: { session } }) => {
       syncSession(session ? { user: { id: session.user.id } } : null);
+    }).catch(() => {
+      setAuthReady(true);
     });
 
     return () => {
@@ -65,6 +118,21 @@ function AppShell() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('post_auth_redirect') === '/checkout') {
+      setCheckoutRedirect();
+    }
+    if (!authReady || !isSignedIn) return;
+
+    const destination = consumeCheckoutRedirect();
+    if (!destination) return;
+
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('post_auth_redirect');
+    window.history.replaceState(window.history.state, '', currentUrl);
+    navigate(destination, { replace: true });
+  }, [authReady, isSignedIn, navigate]);
 
   const handleSignOut = async () => {
     const { error } = await logoutService();
@@ -84,16 +152,18 @@ function AppShell() {
       <Route path="/" element={(
         <div className="app-container">
           <Navbar isSignedIn={isSignedIn} onSignOut={handleSignOut} />
-          <Hero />
-          <CardSlider />
           <Hero2 />
+          <LatestDrops />
+          <HeroCampaigns />
           <Footer />
         </div>
       )} />
       <Route path="/shop" element={<StoreFront isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+      <Route path="/search" element={<SearchResults isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/profile" element={!authReady ? <p role="status">Checking your account...</p> : isSignedIn ? <Profile isSignedIn={isSignedIn} onSignOut={handleSignOut} /> : <Navigate to="/login" replace />} />
+      <Route path="/checkout" element={<CheckoutGate authReady={authReady} isSignedIn={isSignedIn} />} />
       <Route path="/product/:id" element={<ProductDetailPage isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
       <Route path="/admin" element={adminAuthenticated ? <Admin_page /> : <Admin_login onLoginSuccess={() => setAdminAuthenticated(true)} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

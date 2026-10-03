@@ -19,6 +19,14 @@
 .summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(26,26,26,0.03)}
 .summary-total{display:flex;justify-content:space-between;padding:12px 0;font-weight:800}
 .checkout-actions{margin-top:12px}
+.co-address-select-label{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:13px;color:rgba(26,26,26,0.7)}
+.co-address-select{width:100%;min-height:42px;padding:9px 10px;border:1px solid rgba(26,26,26,0.16);border-radius:4px;background:var(--bg);color:var(--text);font:inherit}
+.co-address-form{margin-top:14px}
+.co-address-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.co-save-address{display:flex!important;flex-direction:row!important;align-items:center;gap:9px!important;margin-top:4px}
+.co-save-address input{width:17px;min-height:17px;accent-color:var(--text)}
+.co-loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.co-spinner{vertical-align:middle;margin-right:8px;animation:profile-spin .8s linear infinite}
 .checkout-page{background:var(--bg);color:var(--text);min-height:100vh;padding-top:100px}
 .co-main{max-width:1200px;margin:24px auto;padding:16px}
 .co-main h1{margin:0 0 16px 0}

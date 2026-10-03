@@ -1,7 +1,16 @@
 import { supabase } from '../supabaseClient';
+import { hasCheckoutRedirect } from './checkoutRedirect';
 
 const appRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL?.trim()
   || 'https://dinsarai.github.io/Webapp-template/';
+
+function getAuthRedirectUrl(): string {
+  const redirectUrl = new URL(appRedirectUrl);
+  redirectUrl.hash = '';
+  redirectUrl.search = '';
+  if (hasCheckoutRedirect()) redirectUrl.searchParams.set('post_auth_redirect', '/checkout');
+  return redirectUrl.toString();
+}
 
 export function login(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password });
@@ -13,7 +22,7 @@ export function register(email: string, password: string, fullName: string) {
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: appRedirectUrl,
+      emailRedirectTo: getAuthRedirectUrl(),
     },
   });
 }
@@ -25,7 +34,7 @@ export function logout() {
 export function signInWithGoogle() {
   return supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: appRedirectUrl },
+    options: { redirectTo: getAuthRedirectUrl() },
   });
 }
 

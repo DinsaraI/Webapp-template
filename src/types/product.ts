@@ -6,6 +6,8 @@ export interface Product {
   price: number;
   image_url: string;
   stock: number;
+  category?: string;
+  tags?: string[] | string;
 }
 
 export interface NewProduct {

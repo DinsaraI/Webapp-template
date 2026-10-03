@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LoaderCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import './cart.css';
-import { getCart, removeItem, clearCart } from '../services/cartService';
+import { getCart, removeItem, clearCart, updateQuantity } from '../services/cartService';
+import { supabase } from '../supabaseClient';
+import { setCheckoutRedirect } from '../services/checkoutRedirect';
 
 type Item = {
   id: string;
@@ -15,6 +18,8 @@ const Cart: React.FC = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [checkingOut, setCheckingOut] = useState(false);
 
   useEffect(() => {
     const onUpdated = () => setItems(getCart());
@@ -36,9 +41,32 @@ const Cart: React.FC = () => {
     setItems(getCart());
   };
 
-  const handleProceed = () => {
-    setOpen(false);
-    navigate('/checkout');
+  const handleQuantityChange = (id: string, quantity: number) => {
+    updateQuantity(id, quantity);
+    setItems(getCart());
+  };
+
+  const handleProceed = async () => {
+    setCheckoutError('');
+    setCheckingOut(true);
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error && error.name !== 'AuthSessionMissingError') {
+        throw error;
+      }
+
+      setOpen(false);
+      if (!user) {
+        setCheckoutRedirect();
+        navigate('/login');
+        return;
+      }
+      navigate('/checkout');
+    } catch {
+      setCheckoutError('We could not verify your account. Please try again.');
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
   if (!open) return null;
@@ -58,17 +86,30 @@ const Cart: React.FC = () => {
               <div className="ci-media" style={it.image ? { backgroundImage: `url(${it.image})` } : undefined} />
               <div className="ci-body">
                 <div className="ci-title">{it.name}</div>
-                <div className="ci-meta">{it.qty} × {it.price}</div>
+                <div className="ci-meta">{it.price}</div>
+                <div className="ci-quantity" aria-label={`Quantity for ${it.name}`}>
+                  <button type="button" onClick={() => handleQuantityChange(it.id, (it.qty ?? 1) - 1)} disabled={(it.qty ?? 1) <= 1} aria-label={`Decrease ${it.name} quantity`}>
+                    <Minus size={14} aria-hidden="true" />
+                  </button>
+                  <span>{it.qty ?? 1}</span>
+                  <button type="button" onClick={() => handleQuantityChange(it.id, (it.qty ?? 1) + 1)} disabled={(it.qty ?? 1) >= 20} aria-label={`Increase ${it.name} quantity`}>
+                    <Plus size={14} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
-              <button className="ci-remove" onClick={() => handleRemove(it.id)}>Remove</button>
+              <button className="ci-remove" onClick={() => handleRemove(it.id)} aria-label={`Remove ${it.name}`} title="Remove item"><Trash2 size={16} aria-hidden="true" /></button>
             </div>
           ))}
         </div>
 
         <div className="cart-footer">
           <button className="btn-ghost btn-clear" onClick={() => { clearCart(); setItems([]); }}>Clear</button>
-          <button className="btn-primary" onClick={handleProceed} disabled={items.length === 0}>Proceed to checkout</button>
+          <button className="btn-primary" onClick={() => void handleProceed()} disabled={items.length === 0 || checkingOut}>
+            {checkingOut && <LoaderCircle className="cart-spinner" size={16} aria-hidden="true" />}
+            {checkingOut ? 'Checking account...' : 'Proceed to checkout'}
+          </button>
         </div>
+        {checkoutError && <p className="cart-error" role="alert">{checkoutError}</p>}
       </div>
     </div>
   );

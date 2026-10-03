@@ -5,8 +5,7 @@ import Admin_sidenavbar from './Admin_sidenavbar';
 import Orders_Manager from './Orders_Manager';
 import Global_inventory from './Global_inventory';
 import Finances from './Finances';
-import Designer_manager from './Designer_manager';
-import type { Order, Transaction, Designer } from './types';
+import type { Order, OrderStatus } from './types';
 import { logout } from '../services/authService';
 import { getProducts } from '../services/productService';
 import { getOrders, updateOrderStatus } from '../services/orderService';
@@ -19,28 +18,14 @@ interface AdminNotification {
 	createdAt: Date;
 }
 
-const mockTransactions: Transaction[] = [
-	{ id: 'T-1', orderId: 'ORD-1002', gross: 1250, commissionPct: 12 },
-	{ id: 'T-2', orderId: 'ORD-1001', gross: 420, commissionPct: 12 },
-];
-
-const mockDesigners: Designer[] = [
-	{ id: 'D-1', brand: 'LuxeDesign', owner: 'Sophie Martin', email: 'sophie@luxedesign.com', joinDate: '2025-03-15', status: 'active', warnings: 0, rating: 4.8 },
-	{ id: 'D-2', brand: 'StudioF', owner: 'Francesca Rossi', email: 'francesca@studiof.com', joinDate: '2025-01-20', status: 'active', warnings: 1, rating: 4.5 },
-	{ id: 'D-3', brand: 'ModaPro', owner: 'Elena Garcia', email: 'elena@modapro.com', joinDate: '2024-11-10', status: 'active', warnings: 2, rating: 4.2 },
-	{ id: 'D-4', brand: 'ArtisanCraft', owner: 'Marco Bianchi', email: 'marco@artisancraft.com', joinDate: '2024-08-05', status: 'suspended', warnings: 3, rating: 3.9 },
-	{ id: 'D-5', brand: 'VintageHouse', owner: 'Lucia Ferrari', email: 'lucia@vintagehouse.com', joinDate: '2024-05-12', status: 'banned', warnings: 5, rating: 2.1 },
-];
-
 const Admin_page: React.FC = () => {
 	const navigate = useNavigate();
-	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'finances' | 'designers'>('dashboard');
+	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'finances'>('dashboard');
 
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [ordersLoading, setOrdersLoading] = useState(true);
 	const [ordersError, setOrdersError] = useState('');
-	const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-	const [designers, setDesigners] = useState<Designer[]>(mockDesigners);
+	const [transferredOrderIds, setTransferredOrderIds] = useState<Set<string>>(() => new Set());
 	const [products, setProducts] = useState<Product[]>([]);
 	const [notifications, setNotifications] = useState<AdminNotification[]>([]);
 
@@ -118,7 +103,7 @@ const Admin_page: React.FC = () => {
 
 	const handleConfirm = () => {
 		if (!confirmingOrder) return;
-		void updateOrderStatus(confirmingOrder.id, 'Confirmed', etaInput || undefined)
+		void updateOrderStatus(confirmingOrder.id, 'Processing', etaInput || undefined)
 			.then(() => getOrders())
 			.then((currentOrders) => {
 				setOrders(currentOrders);
@@ -131,7 +116,17 @@ const Admin_page: React.FC = () => {
 
 	const handleDecline = async (orderId: string) => {
 		try {
-			await updateOrderStatus(orderId, 'Declined');
+			await updateOrderStatus(orderId, 'Failed');
+			setOrders(await getOrders());
+			setOrdersError('');
+		} catch (error) {
+			setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.');
+		}
+	};
+
+	const handleStatusUpdate = async (orderId: string, status: OrderStatus) => {
+		try {
+			await updateOrderStatus(orderId, status);
 			setOrders(await getOrders());
 			setOrdersError('');
 		} catch (error) {
@@ -140,24 +135,12 @@ const Admin_page: React.FC = () => {
 	};
 
 	const markTransferred = (id: string) => {
-		setTransactions((t) => t.map((x) => x.id === id ? { ...x, transferred: !x.transferred } : x));
-	};
-
-	const suspendDesigner = (id: string) => {
-		setDesigners((d) => d.map((x) => x.id === id ? { ...x, status: 'suspended' } : x));
-	};
-
-	const banDesigner = (id: string) => {
-		setDesigners((d) => d.map((x) => x.id === id ? { ...x, status: 'banned' } : x));
-	};
-
-	const warnDesigner = (id: string, message: string) => {
-		setDesigners((d) => d.map((x) => x.id === id ? { ...x, warnings: x.warnings + 1 } : x));
-		console.log(`Warning sent to ${id}: ${message}`);
-	};
-
-	const restoreDesigner = (id: string) => {
-		setDesigners((d) => d.map((x) => x.id === id ? { ...x, status: 'active' } : x));
+		setTransferredOrderIds((current) => {
+			const updated = new Set(current);
+			if (updated.has(id)) updated.delete(id);
+			else updated.add(id);
+			return updated;
+		});
 	};
 
 	const activeOrders = orders.length;
@@ -214,7 +197,7 @@ const Admin_page: React.FC = () => {
 				)}
 
 				{view === 'orders' && (
-					<Orders_Manager orders={orders} loading={ordersLoading} error={ordersError} onOpenConfirm={openConfirm} onDecline={handleDecline} />
+					<Orders_Manager orders={orders} loading={ordersLoading} error={ordersError} onOpenConfirm={openConfirm} onDecline={handleDecline} onUpdateStatus={handleStatusUpdate} />
 				)}
 
 				{view === 'inventory' && (
@@ -222,12 +205,8 @@ const Admin_page: React.FC = () => {
 				)}
 
 				{view === 'finances' && (
-					<Finances transactions={transactions} markTransferred={markTransferred} />
+					<Finances orders={orders} transferredOrderIds={transferredOrderIds} markTransferred={markTransferred} />
 				)}
-
-			{view === 'designers' && (
-				<Designer_manager designers={designers} onSuspend={suspendDesigner} onBan={banDesigner} onWarn={warnDesigner} onRestore={restoreDesigner} />
-			)}
 		</main>
 
 		{confirmingOrder && (
@@ -248,4 +227,3 @@ const Admin_page: React.FC = () => {
 };
 
 export default Admin_page;
-

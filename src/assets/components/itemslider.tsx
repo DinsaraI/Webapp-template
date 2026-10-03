@@ -8,15 +8,10 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import './itemslider.css';
 import ProductCard from '../../generative-components/product-card';
-
-interface Item {
-  id?: string;
-  title: string;
-  img: string;
-}
+import type { Product } from '../../types/product';
 
 interface ItemSliderProps {
-  items: Item[];
+  items: Product[];
 }
 
 const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
@@ -30,8 +25,8 @@ const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
   // compute the max index
   const maxIndex = Math.max(0, len - visibleCount);
 
-  const next = () => setIndex((i) => (i + 2) % (maxIndex + 2));
-  const prev = () => setIndex((i) => (i - 2 + (maxIndex + 2)) % (maxIndex + 2));
+  const next = () => setIndex((current) => current >= maxIndex ? 0 : Math.min(current + 2, maxIndex));
+  const prev = () => setIndex((current) => current <= 0 ? maxIndex : Math.max(current - 2, 0));
 
   useEffect(() => {
     // set initial sizes and visible count
@@ -53,6 +48,7 @@ const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
   }, [len]);
 
   useEffect(() => {
+    if (maxIndex === 0) return;
     intervalRef.current = window.setInterval(next, 4000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -81,19 +77,29 @@ const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
         className="track"
         style={{ transform: `translateX(-${index * cardWidth}px)` }}
       >
-        {items.map((item, i) => (
-          <div className="item-card" key={i} style={{ width: cardWidth }}>
-            <ProductCard id={item.id} name={item.title} image={item.img} price={`2000:lkr`} />
+        {items.map((item) => (
+          <div className="item-card" key={item.id} style={{ width: cardWidth }}>
+            <ProductCard
+              id={item.id}
+              name={item.title}
+              image={item.image_url}
+              price={new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(Number(item.price))}
+              addedAt={item.created_at}
+            />
           </div>
         ))}
       </div>
 
-      <button className="prev-btn" onClick={handlePrev} aria-label="Previous">
-        <ChevronLeft />
-      </button>
-      <button className="next-btn" onClick={handleNext} aria-label="Next">
-        <ChevronRight />
-      </button>
+      {maxIndex > 0 && (
+        <>
+          <button className="prev-btn" onClick={handlePrev} aria-label="Previous products">
+            <ChevronLeft />
+          </button>
+          <button className="next-btn" onClick={handleNext} aria-label="Next products">
+            <ChevronRight />
+          </button>
+        </>
+      )}
     </div>
   );
 };

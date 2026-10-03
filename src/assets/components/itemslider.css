@@ -5,8 +5,23 @@
 	position: relative;
 	width: 100%;
 	overflow: hidden;
-	height: 350px;
-	margin-top: 64px;
+	height: 440px;
+	margin-top: 24px;
+}
+
+.latest-drops {
+	width: 100%;
+	padding: 32px 5%;
+	box-sizing: border-box;
+}
+
+.latest-drops h2 {
+	margin: 0;
+	text-align: center;
+}
+
+.latest-drops > p {
+	text-align: center;
 }
 
 .track {
@@ -119,5 +134,8 @@
 	}
 	.item-slider {
 		height: auto;
+	}
+	.latest-drops {
+		padding: 24px 4%;
 	}
 }

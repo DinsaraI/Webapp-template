@@ -15,6 +15,7 @@ const Global_inventory = () => {
 	const [loading, setLoading] = useState(true);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState('');
+	const [search, setSearch] = useState('');
 
 	const loadProducts = useCallback(async () => {
 		setLoading(true);
@@ -29,6 +30,13 @@ const Global_inventory = () => {
 	}, []);
 
 	useEffect(() => { void loadProducts(); }, [loadProducts]);
+
+	const normalizedSearch = search.trim().toLocaleLowerCase();
+	const visibleProducts = products.filter((product) => {
+		if (!normalizedSearch) return true;
+		return product.stock > 0 && [product.title, product.category ?? '', ...(Array.isArray(product.tags) ? product.tags : [product.tags ?? ''])]
+			.some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
+	});
 
 	const handleDelete = async (product: Product) => {
 		if (!window.confirm(`Delete "${product.title}" and its image?`)) return;
@@ -58,10 +66,20 @@ const Global_inventory = () => {
 
 			<section className="admin-product-list" aria-labelledby="admin-products-title">
 				<h2 id="admin-products-title">Products</h2>
+				<label className="admin-product-search">
+					<span>Search available products</span>
+					<input
+						type="search"
+						placeholder="Search by product, category, or tag"
+						value={search}
+						onChange={(event) => setSearch(event.target.value)}
+					/>
+				</label>
 				{loading && <p role="status">Loading products...</p>}
 				{errorMessage && <p className="admin-product-message error" role="alert">{errorMessage}</p>}
 				{!loading && !errorMessage && products.length === 0 && <p>No products have been added.</p>}
-				{products.map((product) => (
+				{!loading && !errorMessage && products.length > 0 && visibleProducts.length === 0 && <p>No available products match your search.</p>}
+				{visibleProducts.map((product) => (
 					<article className="admin-product-row" key={product.id}>
 						<img src={product.image_url} alt="" />
 						<div className="admin-product-row-info">

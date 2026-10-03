@@ -1,12 +1,17 @@
 import React from 'react';
-import type { Transaction } from './types';
+import type { Order } from './types';
 
 interface Props {
-	transactions: Transaction[];
+	orders: Order[];
+	transferredOrderIds: Set<string>;
 	markTransferred: (id: string) => void;
 }
 
-const Finances: React.FC<Props> = ({ transactions, markTransferred }) => {
+	const saleStatuses = new Set(['Paid', 'Confirmed', 'Processing', 'Shipping', 'Shipped']);
+
+const Finances: React.FC<Props> = ({ orders, transferredOrderIds, markTransferred }) => {
+	const sales = orders.filter((order) => saleStatuses.has(order.status));
+
 	return (
 		<section>
 			<h1>Financial Ledger & Payout Settlement</h1>
@@ -23,16 +28,20 @@ const Finances: React.FC<Props> = ({ transactions, markTransferred }) => {
 					</tr>
 				</thead>
 				<tbody>
-					{transactions.map((t) => (
-						<tr key={t.id}>
-							<td>{t.id}</td>
-							<td>{t.orderId}</td>
-							<td>${t.gross}</td>
-							<td>${((t.gross * t.commissionPct) / 100).toFixed(2)} ({t.commissionPct}%)</td>
-							<td>${(t.gross - (t.gross * t.commissionPct) / 100).toFixed(2)}</td>
-							<td><input type="checkbox" checked={!!t.transferred} onChange={() => markTransferred(t.id)} /></td>
+					{sales.map((order) => {
+						const commission = order.amount * 0.12;
+						return (
+						<tr key={order.id}>
+							<td>TXN-{order.order_number}</td>
+							<td>ORD-{String(order.order_number).padStart(6, '0')}</td>
+							<td>${Number(order.amount).toFixed(2)}</td>
+							<td>${commission.toFixed(2)} (12%)</td>
+							<td>${(order.amount - commission).toFixed(2)}</td>
+							<td><input type="checkbox" checked={transferredOrderIds.has(order.id)} onChange={() => markTransferred(order.id)} aria-label={`Mark order ${order.order_number} transferred`} /></td>
 						</tr>
-					))}
+						);
+					})}
+					{sales.length === 0 && <tr><td colSpan={6}>No paid sales yet.</td></tr>}
 				</tbody>
 			</table>
 			</div>

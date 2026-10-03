@@ -1,4 +1,13 @@
-export type OrderStatus = 'Pending' | 'Paid' | 'Confirmed' | 'Shipped' | 'Declined' | 'Cancellation Pending';
+export type OrderStatus =
+  | 'Pending'
+  | 'Paid'
+  | 'Confirmed'
+  | 'Processing'
+  | 'Shipping'
+  | 'Shipped'
+  | 'Failed'
+  | 'Declined'
+  | 'Cancellation Pending';
 
 export interface OrderItem {
   productId: string;
@@ -13,6 +22,14 @@ export interface Order {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
+  shipping_address?: {
+    recipient_name: string;
+    phone_number: string;
+    street_address: string;
+    city: string;
+    postal_code: string;
+    country: string;
+  } | null;
   items: OrderItem[];
   amount: number;
   status: OrderStatus;

@@ -52,6 +52,8 @@
 .admin-page-root .orders-table tbody tr:hover td{background:linear-gradient(90deg, rgba(240,240,255,0.6), rgba(255,255,255,0.6))}
 .admin-page-root .orders-table button{margin-right:8px;padding:8px 10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);background:white;cursor:pointer}
 .admin-page-root .orders-table button.primary{background:var(--gold);color:white;border:0}
+.admin-page-root .orders-search{display:grid;gap:6px;max-width:560px;margin:16px 0;font-size:14px;font-weight:600}
+.admin-page-root .orders-search input{box-sizing:border-box;width:100%;min-height:40px;padding:9px 10px;border:1px solid #bdbdb5;border-radius:4px;background:#fff;font:inherit}
 
 .admin-page-root .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-top:16px}
 .admin-page-root .product-card{background:linear-gradient(180deg,var(--surface),#fff);padding:16px;border-radius:12px;min-height:140px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between}

@@ -7,6 +7,7 @@ import {
   signInWithGoogle,
   updatePassword,
 } from '../services/authService';
+import { hasCheckoutRedirect } from '../services/checkoutRedirect';
 import googleIcon from '../assets/images/google.png';
 import './login.css';
 
@@ -26,6 +27,7 @@ const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [returnToCheckout] = useState(hasCheckoutRedirect);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +60,7 @@ const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
         const { data, error } = await registerService(email.trim(), password, fullName.trim());
         if (error) throw error;
         if (data.session) {
-          navigate('/', { replace: true });
+          if (!returnToCheckout) navigate('/', { replace: true });
         } else {
           setMessage({ type: 'success', text: 'Account created. Check your email to confirm your address, then sign in.' });
           setMode('login');
@@ -69,7 +71,7 @@ const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
       const { error } = await loginService(email.trim(), password);
       if (error) throw error;
       onAuthComplete?.();
-      navigate('/', { replace: true });
+      if (!returnToCheckout) navigate('/', { replace: true });
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Authentication failed. Please try again.' });
     } finally {

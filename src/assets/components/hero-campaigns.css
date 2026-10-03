@@ -1,0 +1,126 @@
+.hero-campaigns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 48px 5%;
+}
+
+.hero-campaign {
+  position: relative;
+  display: flex;
+  min-height: 390px;
+  align-items: flex-end;
+  overflow: hidden;
+  background-position: center;
+  background-size: cover;
+  color: var(--bg);
+  isolation: isolate;
+  text-decoration: none;
+}
+
+.hero-campaign::before,
+.hero-campaign::after {
+  position: absolute;
+  z-index: -1;
+  content: '';
+  inset: 0;
+}
+
+.hero-campaign::before {
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.08) 12%, rgba(20, 20, 20, 0.76) 100%);
+  transition: opacity 250ms ease;
+}
+
+.hero-campaign::after {
+  background: rgba(20, 20, 20, 0.12);
+  transition: background-color 250ms ease;
+}
+
+.hero-campaign:hover::after,
+.hero-campaign:focus-visible::after {
+  background: rgba(20, 20, 20, 0.02);
+}
+
+.hero-campaign:hover::before,
+.hero-campaign:focus-visible::before {
+  opacity: 0.84;
+}
+
+.hero-campaign:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.hero-campaign__content {
+  width: 100%;
+  padding: 30px;
+}
+
+.hero-campaign__badge {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 7px 11px;
+  border: 1px solid rgba(249, 248, 246, 0.72);
+  color: var(--bg);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero-campaign__content h2 {
+  margin: 0 0 8px;
+  color: var(--bg);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.1;
+}
+
+.hero-campaign__content p {
+  max-width: 340px;
+  margin: 0 0 20px;
+  color: rgba(249, 248, 246, 0.9);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.hero-campaign__cta {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.hero-campaign:hover .hero-campaign__cta,
+.hero-campaign:focus-visible .hero-campaign__cta {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+@media (max-width: 700px) {
+  .hero-campaigns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 32px 5%;
+  }
+
+  .hero-campaign {
+    min-height: 330px;
+  }
+
+  .hero-campaign__content {
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-campaign::before,
+  .hero-campaign::after,
+  .hero-campaign__cta {
+    transition: none;
+  }
+}

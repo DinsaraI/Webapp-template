@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { LoaderCircle } from 'lucide-react';
 import Navbar from '../assets/components/navbar';
 import Footer from '../assets/components/footer';
 import { clearCart, getCart } from '../services/cartService';
 import type { CartItem } from '../services/cartService';
 import { createOrder } from '../services/orderService';
+import { getSignedInUser, listShippingAddresses, saveShippingAddress } from '../services/profileService';
+import { supabase } from '../supabaseClient';
+import type { ShippingAddress, ShippingAddressInput } from '../types/profile';
 import './checkout.css';
 
-type Shipping = {
-  fullName: string;
-  street: string;
-  city: string;
-  state: string;
-  province: string;
-  email?: string;
-  phone?: string;
-};
+const NEW_ADDRESS = 'new-address';
+
+const emptyAddress = (): ShippingAddressInput => ({
+  recipient_name: '',
+  phone_number: '',
+  street_address: '',
+  city: '',
+  postal_code: '',
+  country: 'Sri Lanka',
+  is_default: false,
+});
 
 type Payment = {
   cardNumber: string; // store masked/unmasked as needed
@@ -30,13 +36,18 @@ const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
 }).format(price);
 
 const Checkout: React.FC = () => {
-  const [shipping, setShipping] = useState<Partial<Shipping>>({});
   const [payment, setPayment] = useState<Partial<Payment>>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [editingShipping, setEditingShipping] = useState(false);
+  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(NEW_ADDRESS);
+  const [addressForm, setAddressForm] = useState<ShippingAddressInput>(emptyAddress);
+  const [saveAddressForLater, setSaveAddressForLater] = useState(false);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [contactEmail, setContactEmail] = useState('');
   const [editingPayment, setEditingPayment] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
+  const [addressSaveError, setAddressSaveError] = useState('');
   const [orderMessage, setOrderMessage] = useState('');
 
   useEffect(() => {
@@ -44,12 +55,58 @@ const Checkout: React.FC = () => {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.shipping) setShipping(parsed.shipping);
         if (parsed.payment) setPayment(parsed.payment);
+        if (parsed.shipping) {
+          setAddressForm((current) => ({
+            ...current,
+            recipient_name: parsed.shipping.fullName || current.recipient_name,
+            phone_number: parsed.shipping.phone || current.phone_number,
+            street_address: parsed.shipping.street || current.street_address,
+            city: parsed.shipping.city || current.city,
+          }));
+        }
       }
     } catch {
       // ignore
     }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCheckoutDetails = async () => {
+      try {
+        const user = await getSignedInUser();
+        const [{ data: profile, error: profileError }, savedAddresses] = await Promise.all([
+          supabase.from('profiles').select('full_name, phone_number').eq('id', user.id).maybeSingle(),
+          listShippingAddresses(),
+        ]);
+        if (profileError) throw profileError;
+        if (!active) return;
+
+        const availableAddresses = savedAddresses ?? [];
+        setContactEmail(user.email ?? '');
+        setAddresses(availableAddresses);
+        setSelectedAddressId(
+          availableAddresses.find((address) => address.is_default)?.id
+          ?? availableAddresses[0]?.id
+          ?? NEW_ADDRESS,
+        );
+        setAddressForm((current) => ({
+          ...current,
+          recipient_name: profile?.full_name || current.recipient_name,
+          phone_number: profile?.phone_number || current.phone_number,
+          is_default: availableAddresses.length === 0,
+        }));
+      } catch (error) {
+        if (active) setOrderError(error instanceof Error ? error.message : 'Checkout details could not be loaded.');
+      } finally {
+        if (active) setAddressesLoading(false);
+      }
+    };
+
+    void loadCheckoutDetails();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -58,28 +115,6 @@ const Checkout: React.FC = () => {
     window.addEventListener('a2w:cart-updated', syncCart);
     return () => window.removeEventListener('a2w:cart-updated', syncCart);
   }, []);
-
-  const saveToStorage = (s: Partial<Shipping>) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ shipping: s }));
-  };
-
-  const handleShippingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const data = new FormData(form);
-    const s: Partial<Shipping> = {
-      fullName: String(data.get('fullName') || '').trim(),
-      street: String(data.get('street') || '').trim(),
-      city: String(data.get('city') || '').trim(),
-      state: String(data.get('state') || '').trim(),
-      province: String(data.get('province') || '').trim(),
-      email: String(data.get('email') || '').trim(),
-      phone: String(data.get('phone') || '').trim(),
-    };
-    setShipping(s);
-    saveToStorage(s);
-    setEditingShipping(false);
-  };
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,11 +131,24 @@ const Checkout: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
-    const customerName = shipping.fullName?.trim() ?? '';
-    const customerEmail = shipping.email?.trim() ?? '';
-    const customerPhone = shipping.phone?.trim() ?? '';
-    if (!customerName || !customerEmail || !customerPhone) {
-      setOrderError('Enter your name, email, and phone number before placing the order.');
+    const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
+    const shippingAddress: ShippingAddressInput = selectedAddress
+      ? {
+        recipient_name: selectedAddress.recipient_name,
+        phone_number: selectedAddress.phone_number,
+        street_address: selectedAddress.street_address,
+        city: selectedAddress.city,
+        postal_code: selectedAddress.postal_code,
+        country: selectedAddress.country,
+        is_default: selectedAddress.is_default,
+      }
+      : addressForm;
+    const customerName = shippingAddress.recipient_name.trim();
+    const customerPhone = shippingAddress.phone_number.trim();
+    const customerEmail = contactEmail.trim();
+
+    if (!customerName || !customerEmail || !customerPhone || !shippingAddress.street_address.trim() || !shippingAddress.city.trim() || !shippingAddress.postal_code.trim()) {
+      setOrderError('Complete your contact and shipping details before placing the order.');
       return;
     }
     if (cartItems.length === 0) {
@@ -110,17 +158,45 @@ const Checkout: React.FC = () => {
 
     setIsPlacingOrder(true);
     setOrderError('');
+    setAddressSaveError('');
     setOrderMessage('');
     try {
+      await getSignedInUser();
       const order = await createOrder({
         customerName,
         customerEmail,
         customerPhone,
+        shippingAddress: {
+          recipient_name: customerName,
+          phone_number: customerPhone,
+          street_address: shippingAddress.street_address.trim(),
+          city: shippingAddress.city.trim(),
+          postal_code: shippingAddress.postal_code.trim(),
+          country: shippingAddress.country.trim() || 'Sri Lanka',
+        },
         items: cartItems.map((item) => ({ productId: item.id, quantity: item.qty ?? 1 })),
       });
       clearCart();
       setCartItems([]);
       setOrderMessage(`Order ORD-${String(order.order_number).padStart(6, '0')} placed successfully.`);
+      if (!selectedAddress && saveAddressForLater) {
+        try {
+          const savedAddress = await saveShippingAddress({
+            ...shippingAddress,
+            recipient_name: customerName,
+            phone_number: customerPhone,
+            street_address: shippingAddress.street_address.trim(),
+            city: shippingAddress.city.trim(),
+            postal_code: shippingAddress.postal_code.trim(),
+            country: shippingAddress.country.trim() || 'Sri Lanka',
+            is_default: addresses.length === 0,
+          });
+          setAddresses((current) => [...current, savedAddress]);
+          setSelectedAddressId(savedAddress.id);
+        } catch (error) {
+          setAddressSaveError(error instanceof Error ? error.message : 'The order was placed, but this address could not be saved.');
+        }
+      }
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : 'The order could not be placed.');
     } finally {
@@ -133,6 +209,7 @@ const Checkout: React.FC = () => {
     return total + (Number.isFinite(price) ? price : 0) * (item.qty ?? 1);
   }, 0);
 
+  const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
   const maskCard = (n?: string) => {
     if (!n) return '';
     const last4 = n.slice(-4);
@@ -152,39 +229,56 @@ const Checkout: React.FC = () => {
             <form className="co-form" onSubmit={(e) => e.preventDefault()}>
               <label>
                 Email
-                <input name="email" type="email" value={shipping.email || ''} onChange={(e) => setShipping((s) => ({ ...s, email: e.target.value }))} />
-              </label>
-              <label>
-                Phone
-                <input name="phone" type="tel" value={shipping.phone || ''} onChange={(e) => setShipping((s) => ({ ...s, phone: e.target.value }))} />
+                <input name="email" type="email" value={contactEmail} readOnly />
               </label>
             </form>
 
             <div className="co-section">
               <div className="co-section-head">
                 <h2>Shipping Details</h2>
-                <button className="small" onClick={() => setEditingShipping((v) => !v)}>{editingShipping ? 'Close' : shipping.fullName ? 'Edit' : 'Add'}</button>
               </div>
 
-              {shipping && shipping.fullName && !editingShipping ? (
+              {addressesLoading ? <p className="co-loading" role="status"><LoaderCircle size={17} aria-hidden="true" /> Loading saved addresses...</p> : null}
+
+              {!addressesLoading && addresses.length > 0 && (
+                <label className="co-address-select-label">
+                  Choose a saved address
+                  <select className="co-address-select" value={selectedAddressId} onChange={(event) => setSelectedAddressId(event.target.value)}>
+                    {addresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.recipient_name} · {address.street_address}, {address.city}{address.is_default ? ' · Default' : ''}
+                      </option>
+                    ))}
+                    <option value={NEW_ADDRESS}>Use a new shipping address</option>
+                  </select>
+                </label>
+              )}
+
+              {!addressesLoading && addresses.length === 0 && <p className="co-card-body">Add your shipping details to continue.</p>}
+
+              {selectedAddress && !addressesLoading ? (
                 <div className="co-card">
-                  <div className="co-card-title">{shipping.fullName}</div>
-                  <div className="co-card-body">{shipping.street}</div>
-                  <div className="co-card-body">{shipping.city}, {shipping.state} {shipping.province}</div>
+                  <div className="co-card-title">{selectedAddress.recipient_name} · {selectedAddress.phone_number}</div>
+                  <div className="co-card-body">{selectedAddress.street_address}</div>
+                  <div className="co-card-body">{selectedAddress.city}, {selectedAddress.postal_code}</div>
+                  <div className="co-card-body">{selectedAddress.country}</div>
                 </div>
               ) : null}
 
-              {editingShipping ? (
-                <form className="co-form" onSubmit={handleShippingSubmit}>
-                  <label>Full name<input name="fullName" defaultValue={shipping.fullName || ''} required /></label>
-                  <label>Street address<input name="street" defaultValue={shipping.street || ''} required /></label>
-                  <label>City<input name="city" defaultValue={shipping.city || ''} required /></label>
-                  <label>State<input name="state" defaultValue={shipping.state || ''} required /></label>
-                  <label>Province<input name="province" defaultValue={shipping.province || ''} required /></label>
-                  <div className="form-row">
-                    <button type="submit" className="btn-primary">Save</button>
-                    <button type="button" onClick={() => setEditingShipping(false)} className="btn-ghost">Cancel</button>
+              {selectedAddressId === NEW_ADDRESS && !addressesLoading ? (
+                <form className="co-form co-address-form" onSubmit={(event) => event.preventDefault()}>
+                  <label>Recipient name<input autoComplete="name" value={addressForm.recipient_name} onChange={(event) => setAddressForm((current) => ({ ...current, recipient_name: event.target.value }))} required /></label>
+                  <label>Phone number<input type="tel" autoComplete="tel" value={addressForm.phone_number} onChange={(event) => setAddressForm((current) => ({ ...current, phone_number: event.target.value }))} required /></label>
+                  <label>Street address<input autoComplete="street-address" value={addressForm.street_address} onChange={(event) => setAddressForm((current) => ({ ...current, street_address: event.target.value }))} required /></label>
+                  <div className="co-address-row">
+                    <label>City<input autoComplete="address-level2" value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} required /></label>
+                    <label>Postal code<input autoComplete="postal-code" value={addressForm.postal_code} onChange={(event) => setAddressForm((current) => ({ ...current, postal_code: event.target.value }))} required /></label>
                   </div>
+                  <label>Country<input autoComplete="country-name" value={addressForm.country} onChange={(event) => setAddressForm((current) => ({ ...current, country: event.target.value }))} required /></label>
+                  <label className="co-save-address">
+                    <input type="checkbox" checked={saveAddressForLater} onChange={(event) => setSaveAddressForLater(event.target.checked)} />
+                    <span>Save this address to my profile for future purchases</span>
+                  </label>
                 </form>
               ) : null}
             </div>
@@ -232,9 +326,11 @@ const Checkout: React.FC = () => {
 
               <div className="checkout-actions">
                 <button className="btn-primary" type="button" onClick={() => void handlePlaceOrder()} disabled={isPlacingOrder || cartItems.length === 0}>
+                  {isPlacingOrder && <LoaderCircle className="co-spinner" size={17} aria-hidden="true" />}
                   {isPlacingOrder ? 'Placing order...' : 'Place order'}
                 </button>
                 {orderError && <p role="alert">{orderError}</p>}
+                {addressSaveError && <p role="alert">{addressSaveError}</p>}
                 {orderMessage && <p role="status">{orderMessage}</p>}
               </div>
             </div>

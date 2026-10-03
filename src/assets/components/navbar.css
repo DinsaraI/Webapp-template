@@ -217,16 +217,126 @@
   padding: 10px 12px;
   border-radius: 6px;
   cursor: pointer;
+  font: inherit;
+  text-decoration: none;
 }
 
 .profile-menu .menu-item:hover {
   background: rgba(26,26,26,0.04);
 }
 
+.notification-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-notifications {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  padding: 2px 4px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: -56px;
+  z-index: 1100;
+  display: none;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(440px, calc(100vh - 120px));
+  overflow-y: auto;
+  border: 1px solid rgba(26,26,26,0.1);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+  color: var(--text);
+}
+
+.notification-panel.open {
+  display: block;
+}
+
+.notification-panel h2 {
+  margin: 0;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(26,26,26,0.1);
+  font-size: 1rem;
+}
+
+.notification-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notification-panel li {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(26,26,26,0.08);
+}
+
+.notification-panel li.unread {
+  background: rgba(26,26,26,0.045);
+}
+
+.notification-panel li p,
+.notification-panel li time,
+.notification-empty,
+.notification-error {
+  display: block;
+  margin: 5px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.notification-panel li time,
+.notification-empty {
+  color: #686868;
+}
+
+.notification-empty,
+.notification-error {
+  padding: 0 16px 14px;
+}
+
+.notification-error {
+  color: #a32626;
+}
+
 /* Mobile Tweak */
 @media (max-width: 768px) {
   .search-container {
-    display: none; /* Typical for mobile headers to save space */
+    position: absolute;
+    top: 72px;
+    right: 0;
+    left: 0;
+    z-index: 1001;
+    display: flex;
+    justify-content: center;
+    padding: 8px 16px;
+    background: var(--bg);
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -326,8 +436,11 @@
   .nav-cart {
     margin-left: 0;
   }
+  .notification-panel {
+    right: -90px;
+  }
   .mobile-panel {
-    top: 72px;
+    top: 126px;
     background: var(--bg);
     color: var(--text);
     box-shadow: 0 12px 20px rgba(0,0,0,0.12);

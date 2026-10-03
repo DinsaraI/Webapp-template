@@ -1,28 +1,29 @@
 // ## NOTES
-// Hero2 is a secondary hero split-screen section.
-// - static image panels for womens/mens collection.
-// - backend can provide this data/URLs through props later.
+// Homepage hero cards for the women's and men's collections.
 
 import womensImg from '../images/womens.jpg';
 import mensImg from '../images/mens.jpg';
+import { Link } from 'react-router-dom';
 import './hero2.css';
 
 const Hero2 = () => {
   return (
     <section className="hero-split">
-      <div
-        className="split left"
-        style={{ backgroundImage: `url(${womensImg})` }}
-      >
-        <div className="label"><span className="dot" />womens clothing</div>
-      </div>
+      <Link className="split" to="/shop?category=women" aria-label="Shop Womens">
+        <img className="split-image" src={womensImg} alt="" />
+        <span className="split-content">
+          <span className="split-title">Shop Womens</span>
+          <span className="split-cta">Shop Now</span>
+        </span>
+      </Link>
 
-      <div
-        className="split right"
-        style={{ backgroundImage: `url(${mensImg})` }}
-      >
-        <div className="label"><span className="dot" />mens clothing</div>
-      </div>
+      <Link className="split" to="/shop?category=men" aria-label="Shop Mens">
+        <img className="split-image" src={mensImg} alt="" />
+        <span className="split-content">
+          <span className="split-title">Shop Mens</span>
+          <span className="split-cta">Shop Now</span>
+        </span>
+      </Link>
     </section>
   );
 };

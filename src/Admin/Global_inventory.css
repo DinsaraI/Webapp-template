@@ -116,6 +116,25 @@
 	gap: 14px;
 }
 
+.admin-product-search {
+	display: grid;
+	gap: 6px;
+	max-width: 520px;
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.admin-product-search input {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 40px;
+	padding: 9px 10px;
+	border: 1px solid #bdbdb5;
+	border-radius: 3px;
+	background: #fff;
+	font: inherit;
+}
+
 .admin-product-row {
 	display: grid;
 	grid-template-columns: 64px minmax(0, 1fr) auto;

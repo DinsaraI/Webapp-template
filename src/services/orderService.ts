@@ -5,6 +5,14 @@ export interface NewOrder {
 	customerName: string;
 	customerEmail: string;
 	customerPhone: string;
+	shippingAddress: {
+		recipient_name: string;
+		phone_number: string;
+		street_address: string;
+		city: string;
+		postal_code: string;
+		country: string;
+	};
 	items: { productId: string; quantity: number }[];
 }
 
@@ -12,7 +20,7 @@ export async function getOrders(): Promise<Order[]> {
 	const { data, error } = await supabase
 		.from('orders')
 		.select('*')
-		.neq('status', 'Declined')
+		.not('status', 'in', '("Declined","Failed")')
 		.order('created_at', { ascending: false });
 
 	if (error) throw error;
@@ -24,6 +32,7 @@ export async function createOrder(order: NewOrder): Promise<{ id: string; order_
 		p_customer_name: order.customerName,
 		p_customer_email: order.customerEmail,
 		p_customer_phone: order.customerPhone,
+		p_shipping_address: order.shippingAddress,
 		p_items: order.items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
 	});
 
