@@ -11,5 +11,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(
 	supabaseUrl || 'https://placeholder.supabase.co',
 	supabaseAnonKey || 'missing-supabase-anon-key',
+	{
+		auth: {
+			storage: localStorage,
+			persistSession: true,
+			autoRefreshToken: true,
+			detectSessionInUrl: true,
+		},
+	},
 );
-

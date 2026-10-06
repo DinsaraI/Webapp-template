@@ -7,7 +7,7 @@ interface Props {
 	markTransferred: (id: string) => void;
 }
 
-	const saleStatuses = new Set(['Paid', 'Confirmed', 'Processing', 'Shipping', 'Shipped']);
+	const saleStatuses = new Set(['Paid', 'Confirmed', 'Processing', 'Shipping', 'Shipped', 'Delivered']);
 
 const Finances: React.FC<Props> = ({ orders, transferredOrderIds, markTransferred }) => {
 	const sales = orders.filter((order) => saleStatuses.has(order.status));

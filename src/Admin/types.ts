@@ -1,19 +1,13 @@
-export type OrderStatus =
-  | 'Pending'
-  | 'Paid'
-  | 'Confirmed'
-  | 'Processing'
-  | 'Shipping'
-  | 'Shipped'
-  | 'Failed'
-  | 'Declined'
-  | 'Cancellation Pending';
+import type { OrderStatus } from '../types/order';
+export type { OrderStatus } from '../types/order';
 
 export interface OrderItem {
   productId: string;
   title: string;
   quantity: number;
   unitPrice: number;
+  size?: string;
+  imageUrl?: string;
 }
 
 export interface Order {
@@ -34,6 +28,7 @@ export interface Order {
   amount: number;
   status: OrderStatus;
   eta?: string | null;
+  tracking_number?: string | null;
   created_at: string;
 }
 

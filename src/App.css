@@ -1,1 +1,7 @@
 /* App-level layout is intentionally minimal; spacing handled per-component */
+.route-loading {
+  margin: 0;
+  padding: 32px 16px;
+  color: var(--muted);
+  text-align: center;
+}

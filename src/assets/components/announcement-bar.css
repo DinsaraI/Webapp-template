@@ -1,0 +1,46 @@
+.announcement-bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1201;
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 4px 48px;
+  background: var(--text);
+  color: var(--bg);
+  text-align: center;
+}
+
+.announcement-bar p {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.announcement-bar button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.announcement-bar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .announcement-bar p {
+    font-size: 0.72rem;
+  }
+}

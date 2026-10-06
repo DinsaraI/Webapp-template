@@ -11,7 +11,10 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [stock, setStock] = useState('0');
-  const [image, setImage] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [category, setCategory] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [availableSizes, setAvailableSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -20,8 +23,12 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
     event.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
-    if (!image) {
-      setErrorMessage('Choose a product image to upload.');
+    if (images.length === 0) {
+      setErrorMessage('Choose at least one product image to upload.');
+      return;
+    }
+    if (availableSizes.length === 0) {
+      setErrorMessage('Select at least one available size.');
       return;
     }
 
@@ -32,12 +39,18 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
         price: Number(price),
         description: description.trim(),
         stock: Number(stock),
-      }, image);
+        category: category.trim(),
+        tags: [...new Set(tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean))],
+        available_sizes: availableSizes,
+      }, images);
       setTitle('');
       setPrice('');
       setDescription('');
       setStock('0');
-      setImage(null);
+      setImages([]);
+      setCategory('');
+      setTagsInput('');
+      setAvailableSizes(['S', 'M', 'L', 'XL']);
       formRef.current?.reset();
       setSuccessMessage('Product added.');
       onProductAdded();
@@ -66,13 +79,34 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
         </label>
       </div>
       <label>
+        Category
+        <input value={category} onChange={(event) => setCategory(event.target.value)} maxLength={80} />
+      </label>
+      <label>
+        Tags (comma-separated)
+        <input value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder="New, Trending, Sale" maxLength={200} />
+      </label>
+      <label>
         Description
         <textarea value={description} onChange={(event) => setDescription(event.target.value)} required rows={4} />
       </label>
       <label>
-        Product image
-        <input type="file" accept="image/*" onChange={(event) => setImage(event.target.files?.[0] ?? null)} required />
+        Product images
+        <input type="file" accept="image/*" multiple onChange={(event) => setImages(Array.from(event.target.files ?? []))} required />
       </label>
+      <fieldset className="admin-product-sizes">
+        <legend>Available sizes</legend>
+        {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+          <label key={size}>
+            <input
+              type="checkbox"
+              checked={availableSizes.includes(size)}
+              onChange={() => setAvailableSizes((current) => current.includes(size) ? current.filter((item) => item !== size) : [...current, size])}
+            />
+            {size}
+          </label>
+        ))}
+      </fieldset>
       {errorMessage && <p className="admin-product-message error" role="alert">{errorMessage}</p>}
       {successMessage && <p className="admin-product-message success" role="status">{successMessage}</p>}
       <button type="submit" disabled={loading}>{loading ? 'Uploading...' : 'Upload product'}</button>

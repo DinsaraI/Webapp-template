@@ -1,9 +1,10 @@
-type CartItem = {
+export type CartItem = {
   id: string;
   name: string;
   price: string;
   image?: string;
   qty?: number;
+  size?: string;
 };
 
 const CART_KEY = 'a2w_cart_v1';
@@ -27,7 +28,7 @@ export const getCart = () => read();
 
 export const addItem = (item: CartItem) => {
   const items = read();
-  const idx = items.findIndex((i) => i.id === item.id);
+  const idx = items.findIndex((i) => i.id === item.id && i.size === item.size);
   if (idx >= 0) {
     items[idx].qty = Math.min(20, (items[idx].qty || 1) + (item.qty || 1));
   } else {
@@ -40,17 +41,17 @@ export const addItem = (item: CartItem) => {
   window.dispatchEvent(new CustomEvent('a2w:cart-added', { detail: item }));
 };
 
-export const removeItem = (id: string) => {
-  const items = read().filter((i) => i.id !== id);
+export const removeItem = (id: string, size?: string) => {
+  const items = read().filter((i) => i.id !== id || i.size !== size);
   write(items);
 };
 
-export const updateQuantity = (id: string, quantity: number) => {
+export const updateQuantity = (id: string, size: string | undefined, quantity: number) => {
   const items = read();
   const nextQuantity = Number.isFinite(quantity) ? Math.min(20, Math.floor(quantity)) : 1;
   const updatedItems = nextQuantity < 1
-    ? items.filter((item) => item.id !== id)
-    : items.map((item) => item.id === id ? { ...item, qty: nextQuantity } : item);
+    ? items.filter((item) => item.id !== id || item.size !== size)
+    : items.map((item) => item.id === id && item.size === size ? { ...item, qty: nextQuantity } : item);
   write(updatedItems);
 };
 
@@ -60,5 +61,3 @@ export const clearCart = () => {
 
 export const openCart = () => window.dispatchEvent(new CustomEvent('a2w:cart-open'));
 export const closeCart = () => window.dispatchEvent(new CustomEvent('a2w:cart-close'));
-
-export type { CartItem };

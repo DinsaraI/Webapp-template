@@ -11,6 +11,19 @@
   padding: 16px 5%;
 }
 
+.home-page > .hero {
+  margin-top: 90px;
+}
+
+.home-page.announcement-visible > .hero {
+  margin-top: 126px;
+}
+
+.home-page > .hero-split,
+.home-page.announcement-visible > .hero-split {
+  margin-top: 0;
+}
+
 .split {
   position: relative;
   display: flex;
@@ -88,13 +101,29 @@
   outline-offset: 3px;
 }
 
+.home-page.announcement-visible .hero-split {
+  margin-top: 126px;
+}
+
 @media (max-width: 768px) {
   .hero-split {
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
-    margin-top: 126px;
+    margin-top: 0;
     gap: 14px;
     padding: 14px 5%;
+  }
+
+  .home-page.announcement-visible .hero-split {
+    margin-top: 0;
+  }
+
+  .home-page > .hero {
+    margin-top: 72px;
+  }
+
+  .home-page.announcement-visible > .hero {
+    margin-top: 108px;
   }
 
   .split {

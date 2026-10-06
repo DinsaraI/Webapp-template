@@ -4,60 +4,36 @@
 // - tracks auth state from authService (backend can replace implementation)
 // - renders Navbar/landing components when not on login.
 
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import type { AdminAccess } from './components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './assets/components/navbar';
-import StoreFront from './pages/StoreFront';
-import ContactUs from './pages/contact_us';
-import ProductDetailPage from './pages/Product-detail-page';
-import SearchResults from './pages/SearchResults';
-import Checkout from './pages/checkout';
 import { isAdminUser, logout as logoutService } from './services/authService';
-import { getProducts } from './services/productService';
-import type { Product } from './types/product';
 import { supabase } from './supabaseClient';
-import ItemSlider from './assets/components/itemslider';
 import Hero2 from './assets/components/hero2';
+import Hero from './assets/components/hero';
 import HeroCampaigns from './assets/components/hero-campaigns';
 import Footer from './assets/components/footer';
-import Login from './pages/login';
-import Profile from './pages/Profile';
-import Admin_page from './Admin/Admin_page';
-import Admin_login from './Admin/Admin_login';
+import AnnouncementBar from './assets/components/announcement-bar';
+import FeaturedProducts from './assets/components/featured-products';
+import TrustBadges from './assets/components/trust-badges';
 import { consumeCheckoutRedirect, setCheckoutRedirect } from './services/checkoutRedirect';
+import { SiteSettingsProvider } from './context/siteSettingsProvider';
+import { useSiteSettings } from './context/useSiteSettings';
 
 import './App.css';
 
-function LatestDrops() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    getProducts()
-      .then((items) => {
-        if (active) setProducts(items);
-      })
-      .catch((error: unknown) => {
-        if (active) setErrorMessage(error instanceof Error ? error.message : 'Products could not be loaded.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, []);
-
-  return (
-    <section className="latest-drops">
-      <h2>Latest Drops</h2>
-      {loading && <p role="status">Loading products...</p>}
-      {errorMessage && <p role="alert">{errorMessage}</p>}
-      {!loading && !errorMessage && products.length === 0 && <p>No products are available yet.</p>}
-      {!loading && !errorMessage && products.length > 0 && <ItemSlider items={products} />}
-    </section>
-  );
-}
+const StoreFront = lazy(() => import('./pages/StoreFront'));
+const ContactUs = lazy(() => import('./pages/contact_us'));
+const ProductDetailPage = lazy(() => import('./pages/Product-detail-page'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
+const Checkout = lazy(() => import('./pages/checkout'));
+const Login = lazy(() => import('./pages/login'));
+const Profile = lazy(() => import('./pages/Profile'));
+const OrderHistory = lazy(() => import('./pages/OrderHistory'));
+const PolicyPage = lazy(() => import('./pages/PolicyPage'));
+const AdminPage = lazy(() => import('./Admin/Admin_page'));
 
 function CheckoutGate({ authReady, isSignedIn }: { authReady: boolean; isSignedIn: boolean }) {
   const navigate = useNavigate();
@@ -72,9 +48,30 @@ function CheckoutGate({ authReady, isSignedIn }: { authReady: boolean; isSignedI
   return <Checkout />;
 }
 
+function HomePage({ isSignedIn, onSignOut }: { isSignedIn: boolean; onSignOut: () => Promise<void> }) {
+  const { settings } = useSiteSettings();
+  const [announcementVisible, setAnnouncementVisible] = useState(
+    () => localStorage.getItem('a2w_announcement_dismissed_v1') !== 'true',
+  );
+  const showAnnouncement = announcementVisible && settings.announcement_enabled;
+
+  return (
+    <div className={`app-container home-page${showAnnouncement ? ' announcement-visible' : ''}`}>
+      {showAnnouncement && <AnnouncementBar text={settings.announcement_text} onDismiss={() => setAnnouncementVisible(false)} />}
+      <Navbar isSignedIn={isSignedIn} onSignOut={onSignOut} announcementVisible={showAnnouncement} />
+      <Hero settings={settings} />
+      <Hero2 />
+      <TrustBadges />
+      <FeaturedProducts />
+      <HeroCampaigns />
+      <Footer />
+    </div>
+  );
+}
+
 function AppShell() {
   const navigate = useNavigate();
-  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [adminAccess, setAdminAccess] = useState<AdminAccess>('loading');
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
@@ -87,17 +84,19 @@ function AppShell() {
       setIsSignedIn(Boolean(session?.user));
       setAuthReady(true);
       if (!session?.user) {
-        setAdminAuthenticated(false);
+        setAdminAccess('customer');
         return;
       }
       const userId = session.user.id;
+      setAdminAccess('loading');
       window.setTimeout(() => {
         void isAdminUser(userId)
           .then((isAdmin) => {
-            if (active && currentUserId === userId) setAdminAuthenticated(isAdmin);
+            if (active && currentUserId === userId) setAdminAccess(isAdmin ? 'admin' : 'customer');
           })
-          .catch(() => {
-            if (active && currentUserId === userId) setAdminAuthenticated(false);
+          .catch((error: unknown) => {
+            console.error('Unable to verify administrator role:', error);
+            if (active && currentUserId === userId) setAdminAccess('error');
           });
       }, 0);
     };
@@ -144,30 +143,34 @@ function AppShell() {
   };
 
   if (passwordRecovery) {
-    return <Login key="password-recovery" initialMode="resetPassword" onAuthComplete={() => setPasswordRecovery(false)} />;
+    return (
+      <Suspense fallback={<p className="route-loading" role="status">Loading page...</p>}>
+        <Login key="password-recovery" initialMode="resetPassword" onAuthComplete={() => setPasswordRecovery(false)} />
+      </Suspense>
+    );
   }
 
   return (
-    <Routes>
-      <Route path="/" element={(
-        <div className="app-container">
-          <Navbar isSignedIn={isSignedIn} onSignOut={handleSignOut} />
-          <Hero2 />
-          <LatestDrops />
-          <HeroCampaigns />
-          <Footer />
-        </div>
-      )} />
-      <Route path="/shop" element={<StoreFront isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
-      <Route path="/search" element={<SearchResults isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
-      <Route path="/contact" element={<ContactUs />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/profile" element={!authReady ? <p role="status">Checking your account...</p> : isSignedIn ? <Profile isSignedIn={isSignedIn} onSignOut={handleSignOut} /> : <Navigate to="/login" replace />} />
-      <Route path="/checkout" element={<CheckoutGate authReady={authReady} isSignedIn={isSignedIn} />} />
-      <Route path="/product/:id" element={<ProductDetailPage isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
-      <Route path="/admin" element={adminAuthenticated ? <Admin_page /> : <Admin_login onLoginSuccess={() => setAdminAuthenticated(true)} />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<p className="route-loading" role="status">Loading page...</p>}>
+      <Routes>
+        <Route path="/" element={<HomePage isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+        <Route path="/shop" element={<StoreFront isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+        <Route path="/search" element={<SearchResults isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+        <Route path="/contact" element={<ContactUs isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+        <Route path="/policies/:policyId" element={<PolicyPage isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={!authReady ? <p role="status">Checking your account...</p> : isSignedIn ? <Profile isSignedIn={isSignedIn} onSignOut={handleSignOut} /> : <Navigate to="/login" replace />} />
+        <Route path="/orders" element={!authReady ? <p role="status">Checking your account...</p> : isSignedIn ? <OrderHistory isSignedIn={isSignedIn} onSignOut={handleSignOut} /> : <Navigate to="/login" replace />} />
+        <Route path="/checkout" element={<CheckoutGate authReady={authReady} isSignedIn={isSignedIn} />} />
+        <Route path="/product/:id" element={<ProductDetailPage isSignedIn={isSignedIn} onSignOut={handleSignOut} />} />
+        <Route path="/admin" element={
+          <ProtectedRoute authReady={authReady} isSignedIn={isSignedIn} adminAccess={adminAccess}>
+            <AdminPage />
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -175,4 +178,12 @@ function App() {
   return <AppShell />;
 }
 
-export default App;
+function AppWithSettings() {
+  return (
+    <SiteSettingsProvider>
+      <App />
+    </SiteSettingsProvider>
+  );
+}
+
+export default AppWithSettings;

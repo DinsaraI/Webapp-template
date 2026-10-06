@@ -6,8 +6,18 @@
 .pd-main-image{height:520px;background:#e9e6df;background-size:cover;background-position:center;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .pd-main-image img{display:block;width:100%;height:100%;object-fit:cover}
 .pd-placeholder{color:rgba(26,26,26,0.6)}
-.pd-thumbs{display:flex;gap:8px;margin-top:8px}
-.pd-thumb{width:72px;height:72px;background:var(--text);background-size:cover;background-position:center;border-radius:8px;border:1px solid rgba(26,26,26,0.03)}
+.pd-back{align-self:flex-start;padding:10px 0;border:0;background:transparent;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.pd-thumbs{display:flex;gap:8px;margin-top:0;overflow-x:auto}
+.pd-thumb{flex:0 0 72px;width:72px;height:72px;padding:0;background:var(--text);background-size:cover;background-position:center;border-radius:8px;border:1px solid rgba(26,26,26,0.15);overflow:hidden;cursor:pointer}
+.pd-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.pd-thumb.selected{outline:2px solid var(--accent);outline-offset:2px}
+.pd-size-selector{margin:4px 0 0;padding:0;border:0}
+.pd-size-selector legend{margin-bottom:8px;font-weight:700}
+.pd-size-selector p{margin:8px 0;color:#9b2c24}
+.pd-size-options{display:flex;flex-wrap:wrap;gap:8px}
+.pd-size-options button{min-width:44px;min-height:44px;padding:8px 12px;border:1px solid rgba(26,26,26,.22);border-radius:6px;background:transparent;color:var(--text);font:inherit;cursor:pointer}
+.pd-size-options button.selected{border-color:var(--text);background:var(--text);color:var(--bg)}
+.pd-size-selector:disabled .pd-size-options button{opacity:.55;cursor:not-allowed}
 .pd-thumb.empty{display:flex;align-items:center;justify-content:center;color:rgba(26,26,26,0.5)}
 .pd-meta{padding:8px 12px;display:flex;flex-direction:column;gap:12px}
 .pd-title{margin:0;font-size:22px;font-weight:800}
@@ -30,11 +40,12 @@
   .pd-main-image{height:380px}
 }
 
-@media(max-width:600px){
-  .product-detail-page{padding-top:82px}
+@media(max-width:768px){
+  .product-detail-page{padding-top:126px}
   .pd-main{margin:12px auto;padding:12px}
   .pd-main-image{height:min(92vw,380px);border-radius:8px}
   .pd-meta{padding:8px 2px}
   .pd-title{font-size:20px;overflow-wrap:anywhere}
   .pd-actions .btn{min-height:44px}
+  .pd-inner{min-width:0}
 }

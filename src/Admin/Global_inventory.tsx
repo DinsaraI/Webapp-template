@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { deleteProduct, getProducts } from '../services/productService';
 import type { Product } from '../types/product';
 import AdminAddProduct from './AdminAddProduct';
+import AdminEditProduct from './AdminEditProduct';
 import './Global_inventory.css';
 
 const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
@@ -16,6 +17,8 @@ const Global_inventory = () => {
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState('');
 	const [search, setSearch] = useState('');
+	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+	const [successMessage, setSuccessMessage] = useState('');
 
 	const loadProducts = useCallback(async () => {
 		setLoading(true);
@@ -34,17 +37,19 @@ const Global_inventory = () => {
 	const normalizedSearch = search.trim().toLocaleLowerCase();
 	const visibleProducts = products.filter((product) => {
 		if (!normalizedSearch) return true;
-		return product.stock > 0 && [product.title, product.category ?? '', ...(Array.isArray(product.tags) ? product.tags : [product.tags ?? ''])]
+		return [product.title, product.category ?? '', ...(Array.isArray(product.tags) ? product.tags : [product.tags ?? ''])]
 			.some((value) => value.toLocaleLowerCase().includes(normalizedSearch));
 	});
 
 	const handleDelete = async (product: Product) => {
-		if (!window.confirm(`Delete "${product.title}" and its image?`)) return;
+		if (!window.confirm('Are you sure you want to delete this product?')) return;
 		setDeletingId(product.id);
 		setErrorMessage('');
+		setSuccessMessage('');
 		try {
 			await deleteProduct(product);
 			setProducts((current) => current.filter((item) => item.id !== product.id));
+			setSuccessMessage(`${product.title} was archived and removed from the storefront.`);
 		} catch (error) {
 			setErrorMessage(error instanceof Error ? error.message : 'Product could not be deleted.');
 		} finally {
@@ -59,7 +64,7 @@ const Global_inventory = () => {
 					<h1>Product inventory</h1>
 					<p>Manage products available in the customer storefront.</p>
 				</div>
-				<span>{products.length} products</span>
+				<span>{products.length} active products</span>
 			</header>
 
 			<AdminAddProduct onProductAdded={() => { void loadProducts(); }} />
@@ -77,6 +82,7 @@ const Global_inventory = () => {
 				</label>
 				{loading && <p role="status">Loading products...</p>}
 				{errorMessage && <p className="admin-product-message error" role="alert">{errorMessage}</p>}
+				{successMessage && <p className="admin-product-message success" role="status">{successMessage}</p>}
 				{!loading && !errorMessage && products.length === 0 && <p>No products have been added.</p>}
 				{!loading && !errorMessage && products.length > 0 && visibleProducts.length === 0 && <p>No available products match your search.</p>}
 				{visibleProducts.map((product) => (
@@ -86,12 +92,27 @@ const Global_inventory = () => {
 							<h3>{product.title}</h3>
 							<p>{formatPrice(product.price)} · {product.stock} in stock</p>
 						</div>
-						<button type="button" onClick={() => void handleDelete(product)} disabled={deletingId === product.id}>
-							{deletingId === product.id ? 'Deleting...' : 'Delete'}
-						</button>
+						<div className="admin-product-actions">
+							<button type="button" className="admin-edit-button" onClick={() => setEditingProduct(product)}>Edit product</button>
+							<button type="button" onClick={() => void handleDelete(product)} disabled={deletingId === product.id}>
+								{deletingId === product.id ? 'Archiving...' : 'Archive'}
+							</button>
+						</div>
 					</article>
 				))}
 			</section>
+			{editingProduct && (
+				<AdminEditProduct
+					product={editingProduct}
+					onClose={() => setEditingProduct(null)}
+					onProductUpdated={(updated) => {
+						setProducts((current) => current.map((item) => item.id === updated.id ? updated : item));
+						setEditingProduct(null);
+						setSuccessMessage('Product updated successfully.');
+						setErrorMessage('');
+					}}
+				/>
+			)}
 		</section>
 	);
 };

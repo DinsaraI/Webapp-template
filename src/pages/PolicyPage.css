@@ -1,0 +1,125 @@
+.policy-page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.policy-main {
+  box-sizing: border-box;
+  width: min(900px, 100%);
+  min-height: 55vh;
+  margin: 0 auto;
+  padding: 132px 28px 72px;
+}
+
+.policy-back-link {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.policy-back-link:hover,
+.policy-help a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.policy-heading {
+  margin: 26px 0 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.16);
+}
+
+.policy-heading > p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.policy-heading h1 {
+  margin: 0 0 12px;
+  font-family: var(--font-h2);
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.15;
+}
+
+.policy-heading time {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.policy-introduction {
+  margin: 0 0 32px;
+  font-size: 1.04rem;
+  line-height: 1.8;
+}
+
+.policy-sections {
+  display: grid;
+  gap: 26px;
+}
+
+.policy-sections section h2 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+.policy-sections section p,
+.policy-sections section li {
+  color: #4b4b47;
+  font-size: 0.97rem;
+  line-height: 1.8;
+}
+
+.policy-sections section p {
+  margin: 0 0 12px;
+}
+
+.policy-sections section p:last-child {
+  margin-bottom: 0;
+}
+
+.policy-sections section ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.policy-help {
+  margin: 36px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(26, 26, 26, 0.16);
+  font-size: 0.94rem;
+}
+
+.policy-help a {
+  color: inherit;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .policy-main {
+    padding: 104px 20px 48px;
+  }
+
+  .policy-heading {
+    margin-top: 18px;
+  }
+
+  .policy-introduction {
+    font-size: 0.98rem;
+  }
+
+  .policy-sections section p,
+  .policy-sections section li {
+    font-size: 0.93rem;
+  }
+}

@@ -18,9 +18,10 @@ import ProductSearch from './product-search';
 interface NavbarProps {
   isSignedIn?: boolean;
   onSignOut?: () => void;
+  announcementVisible?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
+const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut, announcementVisible = false }) => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -33,15 +34,16 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
   const [notificationError, setNotificationError] = useState('');
   const notificationUserRef = useRef<string | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const notificationRef = useRef<HTMLDivElement | null>(null);
   const lastY = useRef<number>(typeof window !== 'undefined' ? window.scrollY : 0);
   const ticking = useRef(false);
 
   // close dropdown when clicking outside
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (!profileRef.current) return;
-      if (profileRef.current.contains(e.target as Node)) return;
-      setProfileOpen(false);
+      const target = e.target as Node;
+      if (!profileRef.current?.contains(target)) setProfileOpen(false);
+      if (!notificationRef.current?.contains(target)) setNotificationOpen(false);
     };
     document.addEventListener('click', onDocClick);
     const onCartUpdated = () => setCartCount(getCart().length);
@@ -76,6 +78,10 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
     void supabase.auth.getUser().then(({ data, error }) => {
       if (!active) return;
       if (error) {
+        if (error.name === 'AuthSessionMissingError') {
+          syncUser(null);
+          return;
+        }
         setNotificationError('Notifications could not be loaded.');
         console.error('Unable to identify notification recipient:', error.message);
         return;
@@ -201,7 +207,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
 
   return (
     <>
-      <nav className={`navbar ${visible ? 'visible' : 'hidden'}`}>
+      <nav className={`navbar ${visible ? 'visible' : 'hidden'}${profileOpen ? ' profile-open' : ''}${announcementVisible ? ' announcement-active' : ''}`}>
       {/* Left: Logo */}
       <div
         className="logo"
@@ -243,6 +249,7 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
           <div className={`profile-menu ${profileOpen ? 'open' : ''}`}>
             <ul>
               {isSignedIn && <li><Link className="menu-item" to="/profile" onClick={() => setProfileOpen(false)}>Profile</Link></li>}
+              {isSignedIn && <li><Link className="menu-item" to="/orders" onClick={() => setProfileOpen(false)}>Order history</Link></li>}
               <li>
                 <button
                   className="menu-item"
@@ -258,13 +265,13 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
                   {isSignedIn ? 'Sign Out' : 'Sign In'}
                 </button>
               </li>
-              <li><button className="menu-item">Help</button></li>
+              <li><Link className="menu-item" to="/contact" onClick={() => setProfileOpen(false)}>Help & Support</Link></li>
             </ul>
           </div>
         </div>
 
         {notificationUserId && (
-          <div className="notification-menu">
+          <div className="notification-menu" ref={notificationRef}>
             <button
               className="nav-notifications"
               aria-label={`Notifications, ${notifications.filter((notification) => !notification.read_at).length} unread`}
@@ -279,7 +286,13 @@ const Navbar: React.FC<NavbarProps> = ({ isSignedIn = false, onSignOut }) => {
                 </span>
               )}
             </button>
-            <div id="customer-notifications" className={`notification-panel ${notificationOpen ? 'open' : ''}`}>
+            <div
+              id="customer-notifications"
+              className={`notification-panel ${notificationOpen ? 'open' : ''}`}
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest('a')) setNotificationOpen(false);
+              }}
+            >
               <h2>Notifications</h2>
               {notificationError && <p className="notification-error" role="alert">{notificationError}</p>}
               {!notificationError && notifications.length === 0 && <p className="notification-empty">You have no notifications.</p>}

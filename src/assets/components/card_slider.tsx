@@ -5,7 +5,7 @@
 // - loops around using next/prev handlers
 // - backend can populate `cards` array, currently static for demo
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import Card1 from '../images/card 1.jpg';
 import Card2 from '../images/card 2.jpg';
@@ -29,8 +29,8 @@ const CardSlider = () => {
   // compute the max index so we show two cards at once on desktop
   const maxIndex = Math.max(0, len - visibleCount);
 
-  const next = () => setIndex((i) => (i + 1) % (maxIndex + 1));
-  const prev = () => setIndex((i) => (i - 1 + (maxIndex + 1)) % (maxIndex + 1));
+  const next = useCallback(() => setIndex((i) => (i + 1) % (maxIndex + 1)), [maxIndex]);
+  const prev = useCallback(() => setIndex((i) => (i - 1 + (maxIndex + 1)) % (maxIndex + 1)), [maxIndex]);
 
   useEffect(() => {
     // set initial sizes and visible count
@@ -56,7 +56,7 @@ const CardSlider = () => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [maxIndex]);
+  }, [maxIndex, next]);
 
   const handleNext = () => {
     next();

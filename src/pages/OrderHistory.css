@@ -1,0 +1,165 @@
+.order-history-page {
+	min-height: 100vh;
+	padding-top: 100px;
+	background: var(--bg);
+	color: var(--text);
+}
+
+.order-history-main {
+	width: min(1000px, calc(100% - 40px));
+	margin: 0 auto;
+	padding: 40px 0 72px;
+}
+
+.order-history-heading {
+	margin-bottom: 28px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid rgba(26, 26, 26, 0.16);
+}
+
+.order-history-heading p,
+.order-history-heading h1 {
+	margin: 0;
+}
+
+.order-history-heading p {
+	margin-bottom: 8px;
+	color: var(--muted);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+}
+
+.order-history-heading h1 {
+	margin-bottom: 8px;
+	font-size: 2rem;
+}
+
+.order-history-heading span,
+.order-history-card-heading time {
+	color: var(--muted);
+	font-size: 0.9rem;
+}
+
+.order-history-list {
+	display: grid;
+	gap: 16px;
+}
+
+.order-history-card {
+	padding: 20px;
+	border: 1px solid rgba(26, 26, 26, 0.12);
+	background: #fff;
+}
+
+.order-history-card-heading,
+.order-history-card-heading > div,
+.order-history-items li,
+.order-history-total {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.order-history-card-heading > div {
+	align-items: flex-start;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.order-history-card-heading h2 {
+	margin: 0;
+	font-family: var(--font-h3);
+	font-size: 1.05rem;
+}
+
+.order-status-badge {
+	padding: 6px 10px;
+	border-radius: 20px;
+	background: rgba(188, 158, 130, 0.22);
+	font-size: 0.78rem;
+	font-weight: 700;
+}
+
+.order-status-badge.delivered,
+.order-status-badge.shipped {
+	background: rgba(40, 101, 66, 0.12);
+	color: #286542;
+}
+
+.order-status-badge.failed,
+.order-status-badge.declined {
+	background: rgba(155, 44, 36, 0.12);
+	color: #9b2c24;
+}
+
+.order-history-items {
+	display: grid;
+	gap: 10px;
+	margin: 18px 0;
+	padding: 16px 0;
+	border-top: 1px solid rgba(26, 26, 26, 0.1);
+	border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+	list-style: none;
+}
+
+.order-history-items li {
+	align-items: flex-start;
+	font-size: 0.9rem;
+}
+
+.order-history-items li span:first-child {
+	overflow-wrap: anywhere;
+}
+
+.order-history-items li span:last-child {
+	flex: 0 0 auto;
+}
+
+.order-history-total {
+	font-size: 0.95rem;
+}
+
+.order-history-empty {
+	padding: 28px 20px;
+	border: 1px solid rgba(26, 26, 26, 0.12);
+	background: #fff;
+}
+
+.order-history-empty p {
+	margin: 0 0 12px;
+}
+
+.order-history-empty a {
+	color: var(--text);
+	font-weight: 700;
+	text-underline-offset: 3px;
+}
+
+.order-history-error {
+	color: #9b2c24;
+}
+
+@media (max-width: 768px) {
+	.order-history-page {
+		padding-top: 126px;
+	}
+
+	.order-history-main {
+		width: calc(100% - 32px);
+		padding-top: 28px;
+	}
+
+	.order-history-card {
+		padding: 14px;
+	}
+
+	.order-history-card-heading {
+		align-items: flex-start;
+	}
+
+	.order-history-heading h1 {
+		font-size: 1.7rem;
+	}
+}

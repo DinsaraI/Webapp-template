@@ -1,19 +1,7 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom'
 import './loading_page.css'
-
-type LoadingContextValue = {
-  startLoading: () => void;
-  stopLoading: () => void;
-};
-
-const LoadingContext = createContext<LoadingContextValue | null>(null);
-
-export const useLoading = () => {
-  const ctx = useContext(LoadingContext);
-  if (!ctx) throw new Error('useLoading must be used within LoadingProvider');
-  return ctx;
-};
+import { LoadingContext } from './loading_context'
 
 const LoadingOverlay: React.FC = () => {
   return ReactDOM.createPortal(
@@ -78,7 +66,7 @@ export const LoadingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       pageTimerRef.current.forEach((t) => window.clearTimeout(t));
       pageTimerRef.current = [];
     };
-  }, []);
+  }, [startLoading, stopLoading]);
 
   // Wrap window.fetch to automatically trigger loader for network requests
   useEffect(() => {

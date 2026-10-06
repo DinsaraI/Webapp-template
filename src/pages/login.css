@@ -6,9 +6,15 @@
 .login-page {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 100vh;
   color: var(--text);
   background: var(--bg);
+}
+
+.login-page > .site-footer {
+  grid-column: 1 / -1;
+  width: 100%;
 }
 
 .hero-panel {

@@ -69,6 +69,32 @@
 	font: inherit;
 }
 
+.admin-product-sizes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	margin: 0;
+	padding: 12px;
+	border: 1px solid #bdbdb5;
+}
+
+.admin-product-sizes legend {
+	padding: 0 4px;
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.admin-product-sizes label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.admin-product-sizes input {
+	width: 16px;
+	min-height: 16px;
+}
+
 .admin-product-form textarea {
 	resize: vertical;
 }
@@ -90,6 +116,60 @@
 	color: #fff;
 	font: inherit;
 	cursor: pointer;
+}
+
+.admin-product-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.admin-product-row .admin-edit-button {
+	background: #424d43;
+}
+
+.admin-edit-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1400;
+	display: grid;
+	place-items: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.admin-product-form.admin-edit-modal {
+	box-sizing: border-box;
+	width: min(720px, 100%);
+	max-height: calc(100dvh - 40px);
+	overflow-y: auto;
+}
+
+.admin-edit-modal > header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.admin-edit-modal > header h2 {
+	margin: 0;
+}
+
+.admin-edit-modal .admin-edit-close {
+	width: 40px;
+	padding: 0;
+	background: transparent;
+	color: #242b25;
+	font-size: 1.6rem;
+}
+
+.admin-edit-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.admin-edit-actions button:first-child {
+	background: #71716c;
 }
 
 .admin-product-form button:disabled,
@@ -178,7 +258,8 @@
 		height: 60px;
 	}
 
-	.admin-product-row button {
+	.admin-product-actions {
 		grid-column: 2;
+		flex-wrap: wrap;
 	}
 }

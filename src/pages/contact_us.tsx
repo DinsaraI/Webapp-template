@@ -3,95 +3,49 @@ import Navbar from "../assets/components/navbar";
 import Footer from "../assets/components/footer";
 import "./contact_us.css";
 
-const ContactUs: React.FC = () => {
+interface ContactUsProps {
+  isSignedIn?: boolean;
+  onSignOut?: () => void;
+}
+
+const ContactUs: React.FC<ContactUsProps> = ({ isSignedIn, onSignOut }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [topic, setTopic] = useState("Order issue");
   const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder submission behavior
-    console.log("Contact submission", { name, email, message });
-    alert("Thank you — your message has been sent (demo).");
+    setSubmitted(true);
     setName("");
     setEmail("");
+    setTopic("Order issue");
     setMessage("");
   };
 
   return (
     <div className="contact-page">
-      <Navbar />
+      <Navbar isSignedIn={isSignedIn} onSignOut={onSignOut} />
 
       <header className="about-section">
         <div className="about-inner">
-          <h1>About Us</h1>
-
-          <h2>The Curated Perspective</h2>
-          <p>
-            We believe that garments are more than just utility; they are a
-            medium of personal architecture and identity. Founded as a
-            progressive digital sanctuary for independent fashion houses and
-            vanguard designers, our marketplace bridges the gap between raw,
-            visionary talent and the discerning global collector.
-          </p>
-          <p>We don't offer mass production. We curate expressions.</p>
-
-          <h2>Architectural Integrity</h2>
-          <p>
-            Our platform functions as an intentional multi-vendor ecosystem. By
-            granting independent designers complete autonomy over their digital
-            storefronts, production lines, and seasonal drops, we bypass
-            traditional retail bureaucracy. This direct-to-designer pipeline
-            ensures that our collectors receive authentic, high-concept pieces
-            directly from the hands that drafted them.
-          </p>
-          <p>
-            From concept sketch to final construction, every silhouette hosted
-            on our platform is a testament to meticulous material choices and
-            technical craftsmanship.
-          </p>
-
-          <h2>Our Pillars</h2>
-          <ul>
-            <li>
-              <strong>Vanguard Design:</strong> We intentionally select creators
-              who challenge contemporary style norms and focus on premium,
-              editorial-grade execution.
-            </li>
-            <li>
-              <strong>Radical Transparency:</strong> By connecting consumers
-              directly with independent labels, we elevate the narrative of who
-              made your clothes and how they were brought to life.
-            </li>
-            <li>
-              <strong>Quiet Luxury:</strong> Our digital experience reflects our
-              design philosophy: desaturated, intentional, and entirely focused
-              on the structural detail of the garment itself.
-            </li>
-          </ul>
-
-          <h2>The Studio</h2>
-          <p>
-            We are a platform engineered for the next era of fashion houses. By
-            merging state-of-the-art digital infrastructure with uncompromised
-            aesthetic curation, we give creators the tools to manage their
-            identity and collectors the access to invest in rare design.
-          </p>
-          <p>Welcome to a redefined standard of modern luxury.</p>
+          <h1>Contact &amp; Support</h1>
+          <p>Tell our support team what you need help with, or use the direct contact details below.</p>
         </div>
       </header>
 
       <main className="contact-section" id="contact">
         <div className="contact-inner">
           <section className="contact-form">
-            <h2>Contact Us</h2>
+            <h2>Report an issue</h2>
             <form onSubmit={handleSubmit}>
               <label>
                 Name
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { setName(e.target.value); setSubmitted(false); }}
                   placeholder="Your name"
                   required
                 />
@@ -102,26 +56,38 @@ const ContactUs: React.FC = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setSubmitted(false); }}
                   placeholder="you@domain.com"
                   required
                 />
               </label>
 
               <label>
-                Message
+                What can we help with?
+                <select value={topic} onChange={(e) => { setTopic(e.target.value); setSubmitted(false); }}>
+                  <option>Order issue</option>
+                  <option>Product question</option>
+                  <option>Delivery or returns</option>
+                  <option>Account or payment</option>
+                  <option>Other</option>
+                </select>
+              </label>
+
+              <label>
+                Issue details
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Write your message..."
+                  onChange={(e) => { setMessage(e.target.value); setSubmitted(false); }}
+                  placeholder="Describe the issue and include an order number if relevant."
                   rows={6}
                   required
                 />
               </label>
 
+              {submitted && <p className="contact-success" role="status">Your report was submitted (demo form). For direct support, contact us using the details alongside this form.</p>}
               <div className="form-actions">
                 <button type="submit" className="btn-primary">
-                  Send
+                  Send report
                 </button>
               </div>
             </form>
@@ -141,11 +107,11 @@ const ContactUs: React.FC = () => {
               </div>
               <div className="detail-item">
                 <strong>Email</strong>
-                <span>contact@example.com</span>
+                <a href="mailto:contact@example.com">contact@example.com</a>
               </div>
               <div className="detail-item">
                 <strong>Phone</strong>
-                <span>+1 (555) 123-4567</span>
+                <a href="tel:+15551234567">+1 (555) 123-4567</a>
               </div>
               <div className="detail-item">
                 <strong>Address</strong>

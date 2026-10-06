@@ -37,6 +37,15 @@
   box-shadow: 0 6px 20px rgba(13,13,13,0.06);
 }
 
+.navbar.profile-open{
+  z-index:1300;
+  transform:translateY(0);
+}
+
+.navbar.announcement-active {
+  top: 36px;
+}
+
 /* Logo Styling - A2W */
 .logo {
   font-size: 2.8rem;
@@ -166,6 +175,7 @@
 /* Profile dropdown menu */
 .profile-icon {
   position: relative;
+  z-index: 1102;
 }
 
 .profile-btn {
@@ -429,6 +439,11 @@
   .navbar {
     height: 72px;
     padding: 0 16px;
+    width: 100%;
+  }
+  .search-container {
+    box-sizing: border-box;
+    width: 100%;
   }
   .nav-right {
     gap: 8px;
@@ -440,7 +455,10 @@
     right: -90px;
   }
   .mobile-panel {
-    top: 126px;
+    top: calc(126px + var(--announcement-offset, 0px));
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
     background: var(--bg);
     color: var(--text);
     box-shadow: 0 12px 20px rgba(0,0,0,0.12);
@@ -465,9 +483,56 @@
     justify-content: center;
   }
   .profile-icon {
+    z-index: 1102;
     margin-left: 8px;
+    transform: none;
+    transition: none;
+  }
+  .profile-icon:hover {
+    transform: none;
+  }
+  .profile-menu {
+    position: fixed;
+    top: calc(126px + var(--announcement-offset, 0px));
+    right: 0;
+    left: 0;
+    z-index: 1301;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    border-top: 1px solid rgba(26,26,26,0.08);
+    border-radius: 0;
+    background: var(--bg);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.12);
+    transform-origin: top;
+  }
+
+  @media (max-width: 768px) {
+    .navbar.announcement-active {
+      --announcement-offset: 36px;
+    }
+  }
+  .profile-menu ul {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px 16px;
+  }
+  .profile-menu .menu-item {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    padding: 10px 4px;
+    border: 0;
+    border-bottom: 1px solid rgba(26,26,26,0.12);
+    border-radius: 0;
+    letter-spacing: 0.08em;
   }
   .logo {
     margin-left: 0;
+  }
+  .notification-panel {
+    right: -54px;
   }
 }

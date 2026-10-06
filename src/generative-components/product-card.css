@@ -81,7 +81,6 @@
   .pc-title{font-size:14px}
 }
 
-
 /* Make product cards inside drops grid taller than they are wide (portrait) */
 .drops-grid .product-card{
   min-height:420px;
@@ -121,4 +120,37 @@
 /* Ensure actions are pinned to the bottom of card body */
 .pc-actions{
   margin-top: auto;
+}
+
+@media (max-width:768px){
+  .item-card .product-card{
+    min-height:360px;
+    height:auto;
+    aspect-ratio:auto;
+  }
+  .item-card .product-card .pc-media{
+    flex:0 0 180px;
+    min-height:180px;
+  }
+  .item-card .product-card .pc-body{
+    flex:1 0 auto;
+    padding:10px;
+    gap:7px;
+  }
+  .item-card .pc-title{
+    font-size:14px;
+    line-height:1.4;
+    overflow-wrap:anywhere;
+  }
+  .item-card .pc-meta{
+    flex-wrap:wrap;
+    justify-content:flex-start;
+  }
+  .item-card .pc-price,
+  .item-card .pc-days{
+    font-size:12px;
+  }
+  .item-card .pc-add{
+    min-height:44px;
+  }
 }

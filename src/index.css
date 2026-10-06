@@ -41,10 +41,6 @@
 	font-display: swap;
 }
 
-/* Keep Montserrat as a fallback (optional) */
-/* Pull title/body fonts from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,100..900;1,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 /* Global reset to avoid body default margins causing header gaps */
 :root{
 	--font-h1: 'Onneir', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

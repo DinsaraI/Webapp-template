@@ -10,8 +10,6 @@ type ProductCardProps = {
 	onClick?: () => void;
 	id?: string;
 };
-import { addItem } from '../services/cartService';
-
 const daysSince = (d?: string | number | Date) => {
 	if (!d) return 0;
 	const dt = new Date(d);
@@ -64,10 +62,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
 						onClick={(e) => {
 							e.stopPropagation();
 							if (!id) return;
-							addItem({ id, name, price, image });
+							navigate(`/product/${id}`);
 						}}
 					>
-						Add to cart
+						Choose size
 					</button>
 				</div>
 			</div>

@@ -10,7 +10,7 @@ export async function getProducts(): Promise<Product[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as Product[];
+  return ((data ?? []) as Product[]).filter((product) => product.is_archived !== true);
 }
 
 export async function getProduct(id: string): Promise<Product | null> {
@@ -22,61 +22,76 @@ export async function getProduct(id: string): Promise<Product | null> {
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
-  return data as Product;
+  const product = data as Product;
+  return product.is_archived === true ? null : product;
 }
 
 export async function createProduct(
-  product: Omit<NewProduct, 'image_url'>,
-  image: File,
+  product: NewProduct,
+  images: File[],
 ): Promise<Product> {
-  const imagePath = `products/${Date.now()}_${image.name}`;
-  const { error: uploadError } = await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .upload(imagePath, image, { upsert: false });
+  if (images.length === 0) throw new Error('Choose at least one product image.');
+  const uploadedPaths: string[] = [];
 
-  if (uploadError) throw uploadError;
+  try {
+    const imageUrls: string[] = [];
+    for (const [index, image] of images.entries()) {
+      const imagePath = `products/${Date.now()}_${index}_${image.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .upload(imagePath, image, { upsert: false });
+      if (uploadError) throw uploadError;
+      uploadedPaths.push(imagePath);
 
-  const { data: publicUrlData } = supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .getPublicUrl(imagePath);
+      const { data: publicUrlData } = supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .getPublicUrl(imagePath);
+      imageUrls.push(publicUrlData.publicUrl);
+    }
 
-  const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await supabase
+      .from('products')
+      .insert({
+        ...product,
+        image_url: imageUrls[0],
+        images: imageUrls,
+        category: product.category.trim() || null,
+      })
+      .select('*')
+      .single();
+
+    if (insertError) throw insertError;
+    return data as Product;
+  } catch (error) {
+    if (uploadedPaths.length > 0) {
+      const { error: cleanupError } = await supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .remove(uploadedPaths);
+      if (cleanupError) console.error('Unable to clean up uploaded product images:', cleanupError.message);
+    }
+    throw error;
+  }
+}
+
+export async function updateProduct(
+  productId: string,
+  updates: Pick<Product, 'title' | 'description' | 'price' | 'image_url' | 'images' | 'stock' | 'category' | 'tags' | 'available_sizes'>,
+): Promise<Product> {
+  const { data, error } = await supabase
     .from('products')
-    .insert({ ...product, image_url: publicUrlData.publicUrl })
+    .update({ ...updates, category: updates.category?.trim() || null })
+    .eq('id', productId)
     .select('*')
     .single();
 
-  if (insertError) {
-    await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([imagePath]);
-    throw insertError;
-  }
-
+  if (error) throw error;
   return data as Product;
 }
 
-function getProductImagePath(imageUrl: string): string | null {
-  const publicPath = '/storage/v1/object/public/product-images/';
-  try {
-    const path = new URL(imageUrl).pathname;
-    const markerIndex = path.indexOf(publicPath);
-    return markerIndex < 0
-      ? null
-      : decodeURIComponent(path.slice(markerIndex + publicPath.length));
-  } catch {
-    return null;
-  }
-}
-
 export async function deleteProduct(product: Product): Promise<void> {
-  const imagePath = getProductImagePath(product.image_url);
-
-  if (imagePath) {
-    const { error: storageError } = await supabase.storage
-      .from(PRODUCT_IMAGE_BUCKET)
-      .remove([imagePath]);
-    if (storageError) throw storageError;
-  }
-
-  const { error } = await supabase.from('products').delete().eq('id', product.id);
+  const { error } = await supabase
+    .from('products')
+    .update({ is_archived: true })
+    .eq('id', product.id);
   if (error) throw error;
 }

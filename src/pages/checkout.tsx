@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import Navbar from '../assets/components/navbar';
 import Footer from '../assets/components/footer';
@@ -8,6 +8,7 @@ import { createOrder } from '../services/orderService';
 import { getSignedInUser, listShippingAddresses, saveShippingAddress } from '../services/profileService';
 import { supabase } from '../supabaseClient';
 import type { ShippingAddress, ShippingAddressInput } from '../types/profile';
+import { calculateCartSubtotal, calculateShippingFee, FREE_SHIPPING_THRESHOLD, parseCartItemPrice } from '../services/pricing';
 import './checkout.css';
 
 const NEW_ADDRESS = 'new-address';
@@ -29,6 +30,7 @@ type Payment = {
 };
 
 const STORAGE_KEY = 'a2w_checkout_info_v1';
+const SRI_LANKAN_MOBILE_E164 = /^\+947\d{8}$/;
 const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
   style: 'currency',
   currency: 'LKR',
@@ -49,6 +51,7 @@ const Checkout: React.FC = () => {
   const [orderError, setOrderError] = useState('');
   const [addressSaveError, setAddressSaveError] = useState('');
   const [orderMessage, setOrderMessage] = useState('');
+  const placingOrderRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -131,6 +134,7 @@ const Checkout: React.FC = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (placingOrderRef.current) return;
     const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
     const shippingAddress: ShippingAddressInput = selectedAddress
       ? {
@@ -147,6 +151,10 @@ const Checkout: React.FC = () => {
     const customerPhone = shippingAddress.phone_number.trim();
     const customerEmail = contactEmail.trim();
 
+    if (!SRI_LANKAN_MOBILE_E164.test(customerPhone)) {
+      setOrderError('Enter a Sri Lankan mobile number in E.164 format, for example +94712345678.');
+      return;
+    }
     if (!customerName || !customerEmail || !customerPhone || !shippingAddress.street_address.trim() || !shippingAddress.city.trim() || !shippingAddress.postal_code.trim()) {
       setOrderError('Complete your contact and shipping details before placing the order.');
       return;
@@ -156,6 +164,7 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    placingOrderRef.current = true;
     setIsPlacingOrder(true);
     setOrderError('');
     setAddressSaveError('');
@@ -174,7 +183,10 @@ const Checkout: React.FC = () => {
           postal_code: shippingAddress.postal_code.trim(),
           country: shippingAddress.country.trim() || 'Sri Lanka',
         },
-        items: cartItems.map((item) => ({ productId: item.id, quantity: item.qty ?? 1 })),
+        items: cartItems.map((item) => {
+          if (!item.size) throw new Error(`Choose a size for ${item.name} before checking out.`);
+          return { productId: item.id, quantity: item.qty ?? 1, size: item.size };
+        }),
       });
       clearCart();
       setCartItems([]);
@@ -200,14 +212,14 @@ const Checkout: React.FC = () => {
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : 'The order could not be placed.');
     } finally {
+      placingOrderRef.current = false;
       setIsPlacingOrder(false);
     }
   };
 
-  const subtotal = cartItems.reduce((total, item) => {
-    const price = Number(item.price.replace(/[^\d.-]/g, ''));
-    return total + (Number.isFinite(price) ? price : 0) * (item.qty ?? 1);
-  }, 0);
+  const subtotal = calculateCartSubtotal(cartItems);
+  const shippingFee = calculateShippingFee(subtotal);
+  const grandTotal = subtotal + shippingFee;
 
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
   const maskCard = (n?: string) => {
@@ -268,8 +280,22 @@ const Checkout: React.FC = () => {
               {selectedAddressId === NEW_ADDRESS && !addressesLoading ? (
                 <form className="co-form co-address-form" onSubmit={(event) => event.preventDefault()}>
                   <label>Recipient name<input autoComplete="name" value={addressForm.recipient_name} onChange={(event) => setAddressForm((current) => ({ ...current, recipient_name: event.target.value }))} required /></label>
-                  <label>Phone number<input type="tel" autoComplete="tel" value={addressForm.phone_number} onChange={(event) => setAddressForm((current) => ({ ...current, phone_number: event.target.value }))} required /></label>
-                  <label>Street address<input autoComplete="street-address" value={addressForm.street_address} onChange={(event) => setAddressForm((current) => ({ ...current, street_address: event.target.value }))} required /></label>
+                  <label>
+                    Phone number
+                    <input
+                      type="tel"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      placeholder="+94712345678"
+                      pattern="\+947[0-9]{8}"
+                      title="Use Sri Lankan E.164 format, for example +94712345678."
+                      maxLength={12}
+                      value={addressForm.phone_number}
+                      onChange={(event) => setAddressForm((current) => ({ ...current, phone_number: event.target.value }))}
+                      required
+                    />
+                  </label>
+                  <label>Delivery address<input autoComplete="street-address" value={addressForm.street_address} onChange={(event) => setAddressForm((current) => ({ ...current, street_address: event.target.value }))} required /></label>
                   <div className="co-address-row">
                     <label>City<input autoComplete="address-level2" value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} required /></label>
                     <label>Postal code<input autoComplete="postal-code" value={addressForm.postal_code} onChange={(event) => setAddressForm((current) => ({ ...current, postal_code: event.target.value }))} required /></label>
@@ -281,6 +307,9 @@ const Checkout: React.FC = () => {
                   </label>
                 </form>
               ) : null}
+              {selectedAddress && !SRI_LANKAN_MOBILE_E164.test(selectedAddress.phone_number.trim()) && (
+                <p className="co-error" role="alert">This saved address has an invalid phone number. Select or enter an address using +947XXXXXXXX format.</p>
+              )}
             </div>
 
             <div className="co-section">
@@ -317,19 +346,27 @@ const Checkout: React.FC = () => {
               {cartItems.length === 0 ? (
                 <p>Your cart is empty.</p>
               ) : cartItems.map((item) => (
-                <div className="summary-row" key={item.id}>
-                  <span>{item.name} × {item.qty ?? 1}</span>
-                  <span>{item.price}</span>
+                <div className="summary-row" key={`${item.id}-${item.size ?? 'no-size'}`}>
+                  <span>{item.name}{item.size ? ` · ${item.size}` : ''} × {item.qty ?? 1}</span>
+                  <span>{formatPrice(parseCartItemPrice(item.price) * (item.qty ?? 1))}</span>
                 </div>
               ))}
-              <div className="summary-total"><span>Total</span><span>{formatPrice(subtotal)}</span></div>
+              <div className="summary-row"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+              <div className="summary-row">
+                <span>Delivery</span>
+                <span>{shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}</span>
+              </div>
+              {shippingFee > 0 && (
+                <p className="summary-shipping-note">Add {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} for free delivery.</p>
+              )}
+              <div className="summary-total"><span>Grand total</span><span>{formatPrice(grandTotal)}</span></div>
 
               <div className="checkout-actions">
-                <button className="btn-primary" type="button" onClick={() => void handlePlaceOrder()} disabled={isPlacingOrder || cartItems.length === 0}>
+                <button className="btn-primary" type="button" onClick={() => void handlePlaceOrder()} disabled={isPlacingOrder || cartItems.length === 0 || addressesLoading}>
                   {isPlacingOrder && <LoaderCircle className="co-spinner" size={17} aria-hidden="true" />}
-                  {isPlacingOrder ? 'Placing order...' : 'Place order'}
+                  {isPlacingOrder ? 'Placing order...' : 'Place Order'}
                 </button>
-                {orderError && <p role="alert">{orderError}</p>}
+                {orderError && <p className="co-error" role="alert">{orderError}</p>}
                 {addressSaveError && <p role="alert">{addressSaveError}</p>}
                 {orderMessage && <p role="status">{orderMessage}</p>}
               </div>

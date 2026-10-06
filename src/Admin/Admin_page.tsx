@@ -5,10 +5,11 @@ import Admin_sidenavbar from './Admin_sidenavbar';
 import Orders_Manager from './Orders_Manager';
 import Global_inventory from './Global_inventory';
 import Finances from './Finances';
+import SiteSettingsManager from './SiteSettingsManager';
 import type { Order, OrderStatus } from './types';
 import { logout } from '../services/authService';
 import { getProducts } from '../services/productService';
-import { getOrders, updateOrderStatus } from '../services/orderService';
+import { getOrders, OrderNotificationError, sendOrderStatusNotification, updateOrderStatus, updateOrderTrackingNumber } from '../services/orderService';
 import { supabase } from '../supabaseClient';
 import type { Product } from '../types/product';
 
@@ -20,7 +21,7 @@ interface AdminNotification {
 
 const Admin_page: React.FC = () => {
 	const navigate = useNavigate();
-	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'finances'>('dashboard');
+	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'finances' | 'settings'>('dashboard');
 
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [ordersLoading, setOrdersLoading] = useState(true);
@@ -28,10 +29,12 @@ const Admin_page: React.FC = () => {
 	const [transferredOrderIds, setTransferredOrderIds] = useState<Set<string>>(() => new Set());
 	const [products, setProducts] = useState<Product[]>([]);
 	const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+	const [notificationErrors, setNotificationErrors] = useState<Record<string, string>>({});
 
 	// Modal state for confirming order ETA
 	const [confirmingOrder, setConfirmingOrder] = useState<Order | null>(null);
 	const [etaInput, setEtaInput] = useState('');
+	const [confirmSaving, setConfirmSaving] = useState(false);
 
 	useEffect(() => {
 		let mounted = true;
@@ -103,25 +106,34 @@ const Admin_page: React.FC = () => {
 
 	const handleConfirm = () => {
 		if (!confirmingOrder) return;
+		setConfirmSaving(true);
+		const orderId = confirmingOrder.id;
 		void updateOrderStatus(confirmingOrder.id, 'Processing', etaInput || undefined)
 			.then(() => getOrders())
 			.then((currentOrders) => {
 				setOrders(currentOrders);
 				setOrdersError('');
+				setNotificationErrors((current) => {
+					const updated = { ...current };
+					delete updated[orderId];
+					return updated;
+				});
 				setConfirmingOrder(null);
-				console.log(`SMS -> ${confirmingOrder.customer_name}: Your order ORD-${String(confirmingOrder.order_number).padStart(6, '0')} ETA ${etaInput}`);
 			})
-			.catch((error: unknown) => setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.'));
-	};
-
-	const handleDecline = async (orderId: string) => {
-		try {
-			await updateOrderStatus(orderId, 'Failed');
-			setOrders(await getOrders());
-			setOrdersError('');
-		} catch (error) {
-			setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.');
-		}
+			.catch(async (error: unknown) => {
+				if (error instanceof OrderNotificationError) {
+					setNotificationErrors((current) => ({ ...current, [error.orderId]: error.message }));
+					setConfirmingOrder(null);
+					try {
+						setOrders(await getOrders());
+					} catch (refreshError) {
+						setOrdersError(refreshError instanceof Error ? refreshError.message : 'Order status was saved, but orders could not be refreshed.');
+						return;
+					}
+				}
+				setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.');
+			})
+			.finally(() => setConfirmSaving(false));
 	};
 
 	const handleStatusUpdate = async (orderId: string, status: OrderStatus) => {
@@ -129,8 +141,53 @@ const Admin_page: React.FC = () => {
 			await updateOrderStatus(orderId, status);
 			setOrders(await getOrders());
 			setOrdersError('');
+			setNotificationErrors((current) => {
+				const updated = { ...current };
+				delete updated[orderId];
+				return updated;
+			});
 		} catch (error) {
+			if (error instanceof OrderNotificationError) {
+				setNotificationErrors((current) => ({ ...current, [error.orderId]: error.message }));
+				try {
+					setOrders(await getOrders());
+				} catch (refreshError) {
+					setOrdersError(refreshError instanceof Error ? refreshError.message : 'Order status was saved, but orders could not be refreshed.');
+					throw refreshError;
+				}
+			}
 			setOrdersError(error instanceof Error ? error.message : 'Order could not be updated.');
+			throw error;
+		}
+	};
+
+	const handleTrackingUpdate = async (orderId: string, trackingNumber: string) => {
+		try {
+			await updateOrderTrackingNumber(orderId, trackingNumber);
+			setOrders((current) => current.map((order) => (
+				order.id === orderId ? { ...order, tracking_number: trackingNumber.trim() || null } : order
+			)));
+			setOrdersError('');
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Tracking number could not be saved.';
+			setOrdersError(message);
+			throw error;
+		}
+	};
+
+	const handleRetryNotifications = async (orderId: string) => {
+		try {
+			await sendOrderStatusNotification(orderId);
+			setNotificationErrors((current) => {
+				const updated = { ...current };
+				delete updated[orderId];
+				return updated;
+			});
+			setOrdersError('');
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Customer notifications could not be sent.';
+			setNotificationErrors((current) => ({ ...current, [orderId]: message }));
+			setOrdersError(message);
 		}
 	};
 
@@ -197,7 +254,16 @@ const Admin_page: React.FC = () => {
 				)}
 
 				{view === 'orders' && (
-					<Orders_Manager orders={orders} loading={ordersLoading} error={ordersError} onOpenConfirm={openConfirm} onDecline={handleDecline} onUpdateStatus={handleStatusUpdate} />
+					<Orders_Manager
+						orders={orders}
+						loading={ordersLoading}
+						error={ordersError}
+						notificationErrors={notificationErrors}
+						onOpenConfirm={openConfirm}
+						onUpdateStatus={handleStatusUpdate}
+						onUpdateTracking={handleTrackingUpdate}
+						onRetryNotifications={handleRetryNotifications}
+					/>
 				)}
 
 				{view === 'inventory' && (
@@ -207,6 +273,8 @@ const Admin_page: React.FC = () => {
 				{view === 'finances' && (
 					<Finances orders={orders} transferredOrderIds={transferredOrderIds} markTransferred={markTransferred} />
 				)}
+
+				{view === 'settings' && <SiteSettingsManager />}
 		</main>
 
 		{confirmingOrder && (
@@ -216,8 +284,10 @@ const Admin_page: React.FC = () => {
 					<label>Estimated Time of Arrival</label>
 					<input type="date" value={etaInput} onChange={(e) => setEtaInput(e.target.value)} />
 					<div className="modal-actions">
-						<button onClick={() => setConfirmingOrder(null)}>Cancel</button>
-						<button onClick={handleConfirm} className="primary">Confirm & Notify</button>
+						<button onClick={() => setConfirmingOrder(null)} disabled={confirmSaving}>Cancel</button>
+						<button onClick={handleConfirm} className="primary" disabled={confirmSaving}>
+							{confirmSaving ? 'Updating...' : 'Confirm & Notify'}
+						</button>
 					</div>
 				</div>
 			</div>

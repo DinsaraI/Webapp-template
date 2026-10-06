@@ -1,70 +1,65 @@
-// ## NOTES
-// Footer contains social links, payment logos, and quick links.
-// - It uses image icons from assets.
-// - A2W branding is statically defined.
-// - Should be easy for backend to populate links from config.
-
+import { Link } from 'react-router-dom';
 import FacebookIcon from '../images/facebook.png';
 import InstagramIcon from '../images/instagram.png';
 import MasterCardIcon from '../images/card.png';
 import VisaIcon from '../images/visa.png';
 import './footer.css';
 
-const Footer = () => {
+const currentYear = new Date().getFullYear();
+
+export default function Footer() {
   return (
     <footer className="site-footer">
-      <div className="footer-top">
-        <div className="footer-social">
-          <img src={FacebookIcon} alt="Facebook" className="footer-icon" />
-          <img src={InstagramIcon} alt="Instagram" className="footer-icon" />
-        </div>
-        <div className="footer-payments">
-          <img src={MasterCardIcon} alt="Mastercard" className="footer-icon" />
-          <img src={VisaIcon} alt="Visa" className="footer-icon" />
-        </div>
-      </div>
-
       <div className="footer-main">
-        <div className="brand-block">
-          <h2>A2W</h2>
-          <p className="rating">★★★★★ 1.8m</p>
-          <button className="download-btn">DOWNLOAD THE APP</button>
-        </div>
+        <section className="footer-brand" aria-labelledby="footer-brand-name">
+          <Link className="footer-logo" to="/" id="footer-brand-name">A2W</Link>
+          <p className="footer-tagline">Considered style. Made for every day.</p>
+          <div className="footer-social" aria-label="Follow A2W">
+            <a href="https://www.facebook.com/" target="_blank" rel="noreferrer" aria-label="Facebook">
+              <img src={FacebookIcon} alt="" className="footer-icon" />
+            </a>
+            <a href="https://www.instagram.com/a2w_official/" target="_blank" rel="noreferrer" aria-label="Instagram">
+              <img src={InstagramIcon} alt="" className="footer-icon" />
+            </a>
+          </div>
+        </section>
 
-        <div className="column">
-          <h3>HELP & INFORMATION</h3>
-          <a href="#">Help</a>
-          <a href="#">Track order</a>
-          <a href="#">Delivery & returns</a>
-          <a href="#">Sitemap</a>
-        </div>
+        <nav className="footer-column" aria-label="Shop">
+          <h2>Shop</h2>
+          <Link to="/shop?category=women">Women</Link>
+          <Link to="/shop?category=men">Men</Link>
+          <Link to="/shop?tag=New">New Arrivals</Link>
+          <Link to="/shop?tag=Sale">Sale</Link>
+        </nav>
 
-        <div className="column">
-          <h3>ABOUT A2W</h3>
-          <a href="#">About us</a>
-          <a href="#">Careers at A2W</a>
-          <a href="#">Corporate responsibility</a>
-          <a href="#">Investors' site</a>
-        </div>
+        <nav className="footer-column" aria-label="Support and legal">
+          <h2>Support &amp; Legal</h2>
+          <Link to="/contact">Contact Us</Link>
+          <Link to="/policies/shipping">Shipping &amp; Delivery</Link>
+          <Link to="/policies/returns">Returns &amp; Exchanges</Link>
+          <Link to="/policies/privacy">Privacy Policy</Link>
+          <Link to="/policies/terms">Terms of Service</Link>
+        </nav>
 
-        <div className="column">
-          <h3>MORE FROM A2W</h3>
-          <a href="#">Mobile and A2W apps</a>
-          <a href="#">Gift vouchers</a>
-          <a href="#">Black Friday</a>
-        </div>
+        <section className="footer-payments-section" aria-labelledby="footer-payments-title">
+          <h2 id="footer-payments-title">Payment methods</h2>
+          <div className="footer-payments">
+            <span className="footer-payment-method">Cash on Delivery</span>
+            <span className="footer-payment-method">Bank Transfer</span>
+            <img src={VisaIcon} alt="Visa" className="footer-icon" />
+            <img src={MasterCardIcon} alt="Mastercard" className="footer-icon" />
+          </div>
+          <p>Available payment options are shown at checkout.</p>
+        </section>
       </div>
 
       <div className="footer-bottom">
-        <span>© 2026 A2W</span>
-        <div className="footer-links">
-          <a href="#">Privacy & Cookies</a>
-          <a href="#">Ts&Cs</a>
-          <a href="#">Accessibility</a>
-        </div>
+        <span>© {currentYear} A2W. All rights reserved.</span>
+        <nav className="footer-legal-links" aria-label="Legal">
+          <Link to="/policies/privacy">Privacy</Link>
+          <Link to="/policies/terms">Terms</Link>
+        </nav>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

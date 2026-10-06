@@ -79,4 +79,53 @@
 @media(max-width:700px){.admin-page-root .admin-main{padding:18px}.admin-page-root .metrics{grid-template-columns:minmax(0,1fr)}.admin-page-root .dash header{align-items:flex-start;gap:16px}.admin-page-root .dash header h1{font-size:24px}}
 
 .admin-table-scroll{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-.admin-page-root .orders-table,.admin-page-root .ledger{min-width:680px}
+.admin-page-root .orders-table,.admin-page-root .ledger{min-width:880px}
+
+.admin-page-root .order-row-clickable{cursor:pointer}
+.admin-page-root .orders-table .order-detail-link{margin:0;padding:0;border:0;background:transparent;color:#654714;font-weight:700;text-decoration:underline}
+.admin-page-root .orders-table select{min-height:38px;padding:7px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font:inherit}
+.admin-page-root .tracking-controls{display:flex;align-items:center;gap:6px;min-width:220px}
+.admin-page-root .tracking-controls input{box-sizing:border-box;width:140px;min-height:36px}
+.admin-page-root .tracking-controls button{margin:0;white-space:nowrap}
+.admin-inline-loading{display:inline-block;font-size:12px;color:var(--muted)}
+
+.admin-page-root .order-detail-backdrop{z-index:1500}
+.admin-page-root .order-detail-modal{width:min(100%,680px);padding:24px}
+.admin-page-root .order-detail-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:16px;border-bottom:1px solid #e5e7eb}
+.admin-page-root .order-detail-heading h2,.admin-page-root .order-detail-heading p{margin:0}
+.admin-page-root .order-detail-heading p{margin-top:6px;color:var(--muted);font-size:13px}
+.admin-page-root .order-detail-heading button{width:42px;height:42px;border:0;border-radius:8px;background:#eef0f3;font-size:26px;line-height:1;cursor:pointer}
+.admin-page-root .order-detail-customer,.admin-page-root .order-detail-items{padding:16px 0;border-bottom:1px solid #e5e7eb}
+.admin-page-root .order-detail-customer h3,.admin-page-root .order-detail-items h3{margin:0 0 10px;font-size:15px}
+.admin-page-root .order-detail-customer p{margin:5px 0}
+.admin-page-root .order-detail-customer address{font-style:normal;color:#4b5563}
+.admin-page-root .order-detail-item{display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 0}
+.admin-page-root .order-detail-item img,.admin-page-root .order-detail-image-placeholder{width:56px;height:64px;object-fit:cover;background:#eef0f3;border-radius:5px}
+.admin-page-root .order-detail-item > div:nth-child(2){display:grid;gap:5px}
+.admin-page-root .order-detail-item span{font-size:13px;color:var(--muted)}
+.admin-page-root .order-detail-totals{display:grid;gap:10px;margin:0;padding-top:16px}
+.admin-page-root .order-detail-totals > div{display:flex;justify-content:space-between;gap:16px}
+.admin-page-root .order-detail-totals dt,.admin-page-root .order-detail-totals dd{margin:0}
+.admin-page-root .order-detail-grand-total{padding-top:10px;border-top:1px solid #e5e7eb;font-size:17px;font-weight:700}
+
+.admin-page-root .site-settings-panel{max-width:820px}
+.admin-page-root .site-settings-panel > header h1,.admin-page-root .site-settings-panel > header p{margin:0}
+.admin-page-root .site-settings-panel > header p{margin-top:6px;color:var(--muted)}
+.admin-page-root .site-settings-panel form{display:grid;gap:16px;margin-top:22px;padding:22px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:var(--shadow)}
+.admin-page-root .site-settings-panel form > label:not(.site-settings-toggle){display:grid;gap:7px;font-size:14px;font-weight:600}
+.admin-page-root .site-settings-panel input:not([type="checkbox"]),.admin-page-root .site-settings-panel textarea{box-sizing:border-box;width:100%;min-height:42px;padding:10px;border:1px solid #d1d5db;border-radius:7px;font:inherit}
+.admin-page-root .site-settings-panel textarea{resize:vertical}
+.admin-page-root .site-settings-toggle{display:flex;align-items:center;gap:10px;font-weight:600}
+.admin-page-root .site-settings-toggle input{width:18px;height:18px}
+.admin-page-root .site-settings-panel form > button{justify-self:start;min-height:42px;padding:9px 16px;border:0;border-radius:8px;background:#0f172a;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.admin-page-root .site-settings-panel form > button:disabled{opacity:.6;cursor:wait}
+.admin-page-root .site-settings-error{margin:0;color:#9b2c24}
+.admin-page-root .site-settings-success{margin:0;color:#286542}
+
+@media(max-width:560px){
+  .admin-page-root .order-detail-modal{padding:18px}
+  .admin-page-root .order-detail-item{grid-template-columns:48px minmax(0,1fr);gap:10px}
+  .admin-page-root .order-detail-item img,.admin-page-root .order-detail-image-placeholder{width:48px;height:56px}
+  .admin-page-root .order-detail-item > strong:last-child{grid-column:2}
+  .admin-page-root .site-settings-panel form{padding:16px}
+}

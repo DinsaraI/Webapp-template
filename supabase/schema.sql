@@ -231,8 +231,23 @@ create table if not exists public.products (
   description text not null default '',
   price numeric(12, 2) not null check (price >= 0),
   image_url text not null,
+  images text[] not null default '{}',
+  available_sizes text[] not null default array['XS', 'S', 'M', 'L', 'XL', 'XXL']::text[],
+  category text,
+  tags text[] not null default '{}',
   stock integer not null default 0 check (stock >= 0)
 );
+
+alter table public.products
+  add column if not exists images text[] not null default '{}',
+  add column if not exists available_sizes text[] not null default array['XS', 'S', 'M', 'L', 'XL', 'XXL']::text[],
+  add column if not exists category text,
+  add column if not exists tags text[] not null default '{}',
+  add column if not exists is_archived boolean not null default false;
+
+update public.products
+set images = array[image_url]
+where cardinality(images) = 0 and image_url <> '';
 
 do $$
 begin
@@ -260,14 +275,40 @@ create table if not exists public.orders (
   items jsonb not null check (jsonb_typeof(items) = 'array' and jsonb_array_length(items) > 0),
   amount numeric(12, 2) not null check (amount > 0),
   status text not null default 'Pending'
-    check (status in ('Pending', 'Paid', 'Confirmed', 'Shipped', 'Declined', 'Cancellation Pending')),
+    check (status in ('Pending', 'Paid', 'Confirmed', 'Shipped', 'Declined', 'Cancellation Pending', 'Cancelled')),
   eta date,
+  tracking_number text,
   created_at timestamptz not null default now()
 );
 
 alter table public.orders
   add column if not exists shipping_address jsonb not null default '{}'::jsonb,
-  add column if not exists user_id uuid references auth.users (id) on delete cascade;
+  add column if not exists user_id uuid references auth.users (id) on delete cascade,
+  add column if not exists tracking_number text;
+
+update public.orders as customer_order
+set items = (
+  select jsonb_agg(
+    case
+      when item_line.item ? 'imageUrl' then item_line.item
+      when product.image_url is not null then item_line.item || jsonb_build_object('imageUrl', product.image_url)
+      else item_line.item
+    end
+    order by item_line.ordinality
+  )
+  from jsonb_array_elements(customer_order.items) with ordinality as item_line(item, ordinality)
+  left join public.products as product
+    on product.id = case
+      when coalesce(item_line.item ->> 'productId', '') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        then (item_line.item ->> 'productId')::uuid
+      else null
+    end
+)
+where exists (
+  select 1
+  from jsonb_array_elements(customer_order.items) as item_line(item)
+  where not (item_line.item ? 'imageUrl')
+);
 
 update public.orders as customer_order
 set user_id = account.id
@@ -284,8 +325,8 @@ alter table public.orders
 alter table public.orders
   add constraint orders_status_check
   check (status in (
-    'Pending', 'Paid', 'Confirmed', 'Processing', 'Shipping', 'Shipped',
-    'Failed', 'Declined', 'Cancellation Pending'
+    'Pending', 'Paid', 'Confirmed', 'Processing', 'Shipping', 'Shipped', 'Delivered',
+    'Failed', 'Declined', 'Cancellation Pending', 'Cancelled'
   ));
 
 do $$
@@ -306,7 +347,7 @@ $$;
 alter table public.orders enable row level security;
 
 revoke all on table public.orders from anon, authenticated;
-grant select, update (status, eta) on table public.orders to authenticated;
+grant select, update (status, eta, tracking_number) on table public.orders to authenticated;
 
 drop policy if exists "Admins can read orders" on public.orders;
 create policy "Admins can read orders"
@@ -314,12 +355,66 @@ create policy "Admins can read orders"
   to authenticated
   using ((select public.is_admin()));
 
+drop policy if exists "Customers can read their own orders" on public.orders;
+create policy "Customers can read their own orders"
+  on public.orders for select
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
 drop policy if exists "Admins can update orders" on public.orders;
 create policy "Admins can update orders"
   on public.orders for update
   to authenticated
   using ((select public.is_admin()))
   with check ((select public.is_admin()));
+
+create table if not exists public.site_settings (
+  id boolean primary key default true check (id),
+  hero_banner_image_url text not null default '',
+  hero_title text not null default 'Stop blending in. Start being the reference.',
+  hero_subtitle text not null default 'Designer-grade silhouettes for the everyday icon. High-end looks, real-world accessibility.',
+  announcement_text text not null default 'Free delivery on orders over LKR 10,000!',
+  announcement_enabled boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.site_settings (id)
+values (true)
+on conflict (id) do nothing;
+
+alter table public.site_settings enable row level security;
+revoke all on table public.site_settings from anon, authenticated;
+grant select on public.site_settings to anon, authenticated;
+grant update (hero_banner_image_url, hero_title, hero_subtitle, announcement_text, announcement_enabled)
+  on table public.site_settings to authenticated;
+
+drop policy if exists "Site settings are publicly readable" on public.site_settings;
+create policy "Site settings are publicly readable"
+  on public.site_settings for select
+  to anon, authenticated
+  using (true);
+
+drop policy if exists "Admins can update site settings" on public.site_settings;
+create policy "Admins can update site settings"
+  on public.site_settings for update
+  to authenticated
+  using ((select public.is_admin()))
+  with check ((select public.is_admin()));
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'site_settings'
+    ) then
+    alter publication supabase_realtime add table public.site_settings;
+  end if;
+end;
+$$;
 
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
@@ -440,6 +535,9 @@ begin
     when 'Shipped' then
       notification_title := 'Order shipped';
       notification_message := order_label || ' has shipped.';
+    when 'Delivered' then
+      notification_title := 'Order delivered';
+      notification_message := order_label || ' has been delivered.';
     when 'Cancellation Pending' then
       notification_title := 'Cancellation requested';
       notification_message := 'A cancellation was requested for ' || order_label || '.';
@@ -479,8 +577,12 @@ declare
   product_title text;
   product_price numeric(12, 2);
   product_stock integer;
+  product_sizes text[];
+  product_image text;
+  product_is_archived boolean;
   order_items jsonb := '[]'::jsonb;
   order_total numeric(12, 2) := 0;
+  shipping_fee numeric(12, 2) := 0;
 begin
   if (select auth.uid()) is null then
     raise exception 'Sign in is required to place an order.' using errcode = '42501';
@@ -494,6 +596,11 @@ begin
 
   if lower(btrim(p_customer_email)) <> lower(coalesce((select auth.jwt() ->> 'email'), '')) then
     raise exception 'Order email must match the signed-in account.' using errcode = '42501';
+  end if;
+
+  if btrim(p_customer_phone) !~ '^\+947[0-9]{8}$'
+    or btrim(p_shipping_address ->> 'phone_number') !~ '^\+947[0-9]{8}$' then
+    raise exception 'A valid Sri Lankan mobile number in E.164 format is required.' using errcode = '22023';
   end if;
 
   if p_shipping_address is null
@@ -513,16 +620,20 @@ begin
   end if;
 
   for order_line in
-    select product_id, quantity
-    from jsonb_to_recordset(p_items) as requested(product_id uuid, quantity integer)
+    select product_id, quantity, size
+    from jsonb_to_recordset(p_items) as requested(product_id uuid, quantity integer, size text)
   loop
     if order_line.product_id is null or order_line.quantity is null
       or order_line.quantity < 1 or order_line.quantity > 20 then
       raise exception 'Order item quantity is invalid.' using errcode = '22023';
     end if;
 
-    select product.title, product.price, product.stock
-    into product_title, product_price, product_stock
+    if nullif(btrim(order_line.size), '') is null then
+      raise exception 'A size must be selected for every product.' using errcode = '22023';
+    end if;
+
+    select product.title, product.price, product.stock, product.available_sizes, product.image_url, product.is_archived
+    into product_title, product_price, product_stock, product_sizes, product_image, product_is_archived
     from public.products as product
     where product.id = order_line.product_id
     for update;
@@ -530,8 +641,14 @@ begin
     if not found then
       raise exception 'An item in this order is no longer available.' using errcode = '22023';
     end if;
+    if product_is_archived then
+      raise exception 'An item in this order is no longer available.' using errcode = '22023';
+    end if;
     if product_stock < order_line.quantity then
       raise exception 'There is not enough stock for %.', product_title using errcode = '22023';
+    end if;
+    if not (product_sizes @> array[btrim(order_line.size)]::text[]) then
+      raise exception 'The selected size for % is no longer available.', product_title using errcode = '22023';
     end if;
 
     update public.products
@@ -542,10 +659,16 @@ begin
     order_items := order_items || jsonb_build_array(jsonb_build_object(
       'productId', order_line.product_id,
       'title', product_title,
+      'size', btrim(order_line.size),
       'quantity', order_line.quantity,
-      'unitPrice', product_price
+      'unitPrice', product_price,
+      'imageUrl', product_image
     ));
   end loop;
+
+  if order_total < 10000 then
+    shipping_fee := 500;
+  end if;
 
   return query
   insert into public.orders as created (user_id, customer_name, customer_email, customer_phone, shipping_address, items, amount)
@@ -563,7 +686,7 @@ begin
       'country', btrim(p_shipping_address ->> 'country')
     ),
     order_items,
-    order_total
+    order_total + shipping_fee
   )
   returning created.id, created.order_number;
 end;

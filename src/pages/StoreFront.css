@@ -101,7 +101,11 @@
   color: #8d2828;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .storefront-page {
+    padding-top: 126px;
+  }
+
   .storefront-main {
     width: min(1240px, calc(100% - 32px));
     padding-top: 28px;
@@ -120,8 +124,18 @@
     display: block;
   }
 
+  .storefront-product-info h2 {
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+
+  .storefront-product-info p {
+    font-size: 0.82rem;
+  }
+
   .storefront-detail-link {
-    display: inline-block;
-    margin-top: 8px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 }

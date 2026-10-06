@@ -8,6 +8,7 @@ import {
   updatePassword,
 } from '../services/authService';
 import { hasCheckoutRedirect } from '../services/checkoutRedirect';
+import Footer from '../assets/components/footer';
 import googleIcon from '../assets/images/google.png';
 import './login.css';
 
@@ -170,6 +171,7 @@ const Login = ({ initialMode = 'login', onAuthComplete }: LoginProps) => {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

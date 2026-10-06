@@ -4,7 +4,7 @@
 // - loops sliding by 2 items at a time
 // - includes placeholder click handler for item actions
 //
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import './itemslider.css';
 import ProductCard from '../../generative-components/product-card';
@@ -25,8 +25,8 @@ const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
   // compute the max index
   const maxIndex = Math.max(0, len - visibleCount);
 
-  const next = () => setIndex((current) => current >= maxIndex ? 0 : Math.min(current + 2, maxIndex));
-  const prev = () => setIndex((current) => current <= 0 ? maxIndex : Math.max(current - 2, 0));
+  const next = useCallback(() => setIndex((current) => current >= maxIndex ? 0 : Math.min(current + 2, maxIndex)), [maxIndex]);
+  const prev = useCallback(() => setIndex((current) => current <= 0 ? maxIndex : Math.max(current - 2, 0)), [maxIndex]);
 
   useEffect(() => {
     // set initial sizes and visible count
@@ -53,7 +53,7 @@ const ItemSlider: React.FC<ItemSliderProps> = ({ items }) => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [maxIndex]);
+  }, [maxIndex, next]);
 
   const handleNext = () => {
     next();

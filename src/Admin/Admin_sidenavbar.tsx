@@ -2,7 +2,7 @@ import React from 'react';
 import './Admin_sidenavbar.css';
 
 interface Props {
-	active: 'dashboard' | 'orders' | 'inventory' | 'finances';
+	active: 'dashboard' | 'orders' | 'inventory' | 'finances' | 'settings';
 	onChange: (v: Props['active']) => void;
 }
 
@@ -15,6 +15,7 @@ const Admin_sidenavbar: React.FC<Props> = ({ active, onChange }) => {
 				<button className={active === 'orders' ? 'active' : ''} onClick={() => onChange('orders')}>Orders Manager</button>
 				<button className={active === 'inventory' ? 'active' : ''} onClick={() => onChange('inventory')}>Global Inventory</button>
 				<button className={active === 'finances' ? 'active' : ''} onClick={() => onChange('finances')}>Finances</button>
+				<button className={active === 'settings' ? 'active' : ''} onClick={() => onChange('settings')}>Site Settings</button>
 			</nav>
 		</aside>
 	);
