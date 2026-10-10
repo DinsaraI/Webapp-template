@@ -82,16 +82,25 @@ export async function updateProduct(
     .update({ ...updates, category: updates.category?.trim() || null })
     .eq('id', productId)
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) {
+    throw new Error('Product was not updated. It may no longer exist or you may not have permission to manage it.');
+  }
   return data as Product;
 }
 
 export async function deleteProduct(product: Product): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('products')
     .update({ is_archived: true })
-    .eq('id', product.id);
+    .eq('id', product.id)
+    .select('id')
+    .maybeSingle();
+
   if (error) throw error;
+  if (!data) {
+    throw new Error('Product was not archived. It may no longer exist or you may not have permission to manage it.');
+  }
 }
