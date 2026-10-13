@@ -17,6 +17,7 @@
 
 .home-page.announcement-visible > .hero {
   margin-top: 126px;
+  min-height: calc(100vh - 126px);
 }
 
 .home-page > .hero-split,
@@ -119,11 +120,13 @@
   }
 
   .home-page > .hero {
-    margin-top: 72px;
+    margin-top: 126px;
+    min-height: calc(100svh - 126px);
   }
 
   .home-page.announcement-visible > .hero {
-    margin-top: 108px;
+    margin-top: 162px;
+    min-height: calc(100svh - 162px);
   }
 
   .split {

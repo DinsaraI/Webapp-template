@@ -4,7 +4,6 @@ import './Admin_page.css';
 import Admin_sidenavbar from './Admin_sidenavbar';
 import Orders_Manager from './Orders_Manager';
 import Global_inventory from './Global_inventory';
-import Finances from './Finances';
 import SiteSettingsManager from './SiteSettingsManager';
 import type { Order, OrderStatus } from './types';
 import { logout } from '../services/authService';
@@ -21,12 +20,11 @@ interface AdminNotification {
 
 const Admin_page: React.FC = () => {
 	const navigate = useNavigate();
-	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'finances' | 'settings'>('dashboard');
+	const [view, setView] = useState<'dashboard' | 'orders' | 'inventory' | 'settings'>('dashboard');
 
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [ordersLoading, setOrdersLoading] = useState(true);
 	const [ordersError, setOrdersError] = useState('');
-	const [transferredOrderIds, setTransferredOrderIds] = useState<Set<string>>(() => new Set());
 	const [products, setProducts] = useState<Product[]>([]);
 	const [notifications, setNotifications] = useState<AdminNotification[]>([]);
 	const [notificationErrors, setNotificationErrors] = useState<Record<string, string>>({});
@@ -191,19 +189,8 @@ const Admin_page: React.FC = () => {
 		}
 	};
 
-	const markTransferred = (id: string) => {
-		setTransferredOrderIds((current) => {
-			const updated = new Set(current);
-			if (updated.has(id)) updated.delete(id);
-			else updated.add(id);
-			return updated;
-		});
-	};
-
 	const activeOrders = orders.length;
 	const activeProducts = products.filter((product) => product.stock > 0).length;
-	const totalRevenue = orders.reduce((total, order) => total + order.amount, 0);
-	const formattedRevenue = `$${totalRevenue.toLocaleString()}`;
 
 	return (
 		<div className="admin-page-root">
@@ -228,10 +215,6 @@ const Admin_page: React.FC = () => {
 							<div className="card">
 								<h3>Items for Sale</h3>
 								<p>{activeProducts}</p>
-							</div>
-							<div className="card">
-								<h3>Total Revenue</h3>
-								<p>{formattedRevenue}</p>
 							</div>
 						</div>
 
@@ -268,10 +251,6 @@ const Admin_page: React.FC = () => {
 
 				{view === 'inventory' && (
 					<Global_inventory />
-				)}
-
-				{view === 'finances' && (
-					<Finances orders={orders} transferredOrderIds={transferredOrderIds} markTransferred={markTransferred} />
 				)}
 
 				{view === 'settings' && <SiteSettingsManager />}

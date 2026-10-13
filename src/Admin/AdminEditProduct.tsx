@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { updateProduct } from '../services/productService';
-import type { Product } from '../types/product';
+import { normalizeProductCategory, PRODUCT_CATEGORIES, type Product, type ProductCategory } from '../types/product';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
@@ -13,7 +13,7 @@ interface AdminEditProductProps {
 export default function AdminEditProduct({ product, onClose, onProductUpdated }: AdminEditProductProps) {
   const [title, setTitle] = useState(product.title);
   const [price, setPrice] = useState(String(product.price));
-  const [category, setCategory] = useState(product.category ?? '');
+  const [category, setCategory] = useState<ProductCategory | ''>(normalizeProductCategory(product.category) ?? '');
   const [tagsInput, setTagsInput] = useState((Array.isArray(product.tags) ? product.tags : (product.tags ?? '').split(/[|,]/)).join(', '));
   const [description, setDescription] = useState(product.description);
   const [stock, setStock] = useState(String(product.stock));
@@ -32,6 +32,14 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
     }
     if (availableSizes.length === 0) {
       setErrorMessage('Select at least one available size.');
+      return;
+    }
+    if (!category) {
+      setErrorMessage('Choose a product category.');
+      return;
+    }
+    if (!tagsInput.split(',').some((tag) => tag.trim())) {
+      setErrorMessage('Enter at least one product tag.');
       return;
     }
 
@@ -70,7 +78,7 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
         <div className="admin-product-form-row">
           <label>
             Price (LKR)
-            <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} min="0" step="0.01" required />
+            <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} min="0.01" step="0.01" required />
           </label>
           <label>
             Stock
@@ -79,11 +87,14 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
         </div>
         <label>
           Category
-          <input value={category} onChange={(event) => setCategory(event.target.value)} maxLength={80} />
+          <select value={category} onChange={(event) => setCategory(event.target.value as ProductCategory | '')} required>
+            <option value="">Choose a category</option>
+            {PRODUCT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </select>
         </label>
         <label>
           Tags (comma-separated)
-          <input value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder="New, Trending, Sale" maxLength={200} />
+          <input value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder="New, Trending, Sale" maxLength={200} required />
         </label>
         <label>
           Description
@@ -94,7 +105,7 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
           <textarea value={imageUrls} onChange={(event) => setImageUrls(event.target.value)} required rows={4} />
         </label>
         <fieldset className="admin-product-sizes">
-          <legend>Available sizes</legend>
+          <legend>Available sizes (choose at least one)</legend>
           {SIZES.map((size) => (
             <label key={size}>
               <input

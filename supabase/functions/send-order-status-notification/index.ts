@@ -27,6 +27,7 @@ interface OrderRecord {
 	customer_phone: string;
 	status: OrderStatus;
 	eta: string | null;
+	tracking_number: string | null;
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -66,7 +67,7 @@ async function providerFailure(response: Response, provider: string): Promise<st
 	return `${provider} provider returned HTTP ${response.status}${safeDetail ? `: ${safeDetail}` : ''}`;
 }
 
-function messageForStatus(status: OrderStatus, orderLabel: string, eta: string | null): string {
+function messageForStatus(status: OrderStatus, orderLabel: string, eta: string | null, trackingNumber: string | null): string {
 	switch (status) {
 		case 'Processing':
 		case 'Confirmed':
@@ -76,7 +77,7 @@ function messageForStatus(status: OrderStatus, orderLabel: string, eta: string |
 		case 'Shipping':
 			return `${orderLabel} is being prepared for delivery.${eta ? ` Estimated delivery: ${eta}.` : ''}`;
 		case 'Shipped':
-			return `${orderLabel} has shipped.${eta ? ` Estimated delivery: ${eta}.` : ''}`;
+			return `${orderLabel} has shipped.${trackingNumber ? ` Tracking number: ${trackingNumber}.` : ''}${eta ? ` Estimated delivery: ${eta}.` : ''}`;
 		case 'Delivered':
 			return `${orderLabel} has been delivered. Thank you for your order.`;
 		case 'Failed':
@@ -186,14 +187,17 @@ Deno.serve(async (request: Request) => {
 
 	const { data: order, error: orderError } = await adminClient
 		.from('orders')
-		.select('id, order_number, customer_name, customer_email, customer_phone, status, eta')
+		.select('id, order_number, customer_name, customer_email, customer_phone, status, eta, tracking_number')
 		.eq('id', body.orderId)
 		.maybeSingle<OrderRecord>();
 	if (orderError) return jsonResponse({ error: 'Could not load the order for notification.' }, 500);
 	if (!order) return jsonResponse({ error: 'Order not found.' }, 404);
 
 	const orderLabel = `ORD-${String(order.order_number).padStart(6, '0')}`;
-	const message = messageForStatus(order.status, orderLabel, order.eta);
+	if (order.status === 'Shipped' && !order.tracking_number?.trim()) {
+		return jsonResponse({ error: 'A tracking number must be saved before a shipped notification can be sent.' }, 409);
+	}
+	const message = messageForStatus(order.status, orderLabel, order.eta, order.tracking_number);
 	const [emailResult, smsResult] = await Promise.allSettled([
 		sendEmail(resendApiKey, emailFrom, order.customer_email, orderLabel, order.customer_name, message),
 		sendSms(twilioAccountSid, twilioAuthToken, twilioFromNumber, order.customer_phone, message),

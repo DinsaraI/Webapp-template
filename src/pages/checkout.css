@@ -22,6 +22,16 @@
 .summary-total{display:flex;justify-content:space-between;gap:16px;padding:12px 0;font-weight:800}
 .checkout-actions{margin-top:12px}
 .checkout-actions .btn-primary{width:100%;min-height:48px;font-size:1rem;font-weight:700}
+.payhere-demo-notice{padding:14px;border:1px solid rgba(26,26,26,.12);border-radius:10px}
+.payhere-demo-notice h2{margin:0 0 6px;font-size:1rem}
+.payhere-demo-notice p{margin:0;color:rgba(26,26,26,.65);font-size:.9rem;line-height:1.5}
+.demo-payment-backdrop{position:fixed;z-index:1000;inset:0;display:grid;place-items:center;padding:20px;background:rgba(14,14,14,.66)}
+.demo-payment-panel{display:flex;width:min(100%,440px);flex-direction:column;gap:14px;padding:28px;border-radius:14px;background:var(--bg);color:var(--text);box-shadow:0 20px 70px rgba(0,0,0,.28)}
+.demo-payment-panel h2,.demo-payment-panel p{margin:0}
+.demo-payment-panel > p:not(.demo-payment-label){color:rgba(26,26,26,.68);line-height:1.5}
+.demo-payment-label{color:var(--muted);font-size:.76rem;font-weight:700;letter-spacing:.1em}
+.demo-payment-total{display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid rgba(26,26,26,.12);border-bottom:1px solid rgba(26,26,26,.12)}
+.demo-payment-panel .btn-primary,.demo-payment-panel .btn-ghost{min-height:46px}
 .co-address-select-label{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:13px;color:rgba(26,26,26,0.7)}
 .co-address-select{width:100%;min-height:42px;padding:9px 10px;border:1px solid rgba(26,26,26,0.16);border-radius:4px;background:var(--bg);color:var(--text);font:inherit}
 .co-address-form{margin-top:14px}

@@ -64,7 +64,7 @@ export async function getCustomerOrders(): Promise<CustomerOrder[]> {
 	const user = await getSignedInUser();
 	const { data, error } = await supabase
 		.from('orders')
-		.select('id, order_number, user_id, customer_name, customer_email, customer_phone, items, amount, status, created_at, eta')
+		.select('id, order_number, user_id, customer_name, customer_email, customer_phone, items, amount, status, created_at, eta, tracking_number')
 		.eq('user_id', user.id)
 		.order('created_at', { ascending: false });
 
@@ -72,22 +72,49 @@ export async function getCustomerOrders(): Promise<CustomerOrder[]> {
 	return (data ?? []) as CustomerOrder[];
 }
 
-export async function createOrder(order: NewOrder): Promise<{ id: string; order_number: number }> {
-	const { data, error } = await supabase.rpc('place_order', {
-		p_customer_name: order.customerName,
-		p_customer_email: order.customerEmail,
-		p_customer_phone: order.customerPhone,
-		p_shipping_address: order.shippingAddress,
-		p_items: order.items.map((item) => ({ product_id: item.productId, quantity: item.quantity, size: item.size })),
+export async function createOrder(order: NewOrder, amountInCents: number): Promise<{ id: string; order_number: number }> {
+	const { data, error } = await supabase.functions.invoke('payhere-demo-confirmation', {
+		body: { order, amountInCents },
 	});
-
-	if (error) throw error;
-	const createdOrder = (data as { id: string; order_number: number }[] | null)?.[0];
-	if (!createdOrder) throw new Error('The order could not be created.');
-	return createdOrder;
+	if (error) {
+		let message = error.message;
+		if ('context' in error && error.context instanceof Response) {
+			const responseBody: unknown = await error.context.clone().json().catch(() => null);
+			if (
+				typeof responseBody === 'object'
+				&& responseBody !== null
+				&& 'error' in responseBody
+				&& typeof responseBody.error === 'string'
+			) {
+				message = responseBody.error;
+			}
+		}
+		throw new Error(message);
+	}
+	if (
+		typeof data?.paymentStatus !== 'string'
+		|| data.paymentStatus !== 'COMPLETE'
+		|| typeof data.order?.id !== 'string'
+		|| typeof data.order?.order_number !== 'number'
+	) {
+		throw new Error('PayHere did not confirm this demo payment. No order was created.');
+	}
+	return data.order as { id: string; order_number: number };
 }
 
 export async function updateOrderStatus(id: string, status: OrderStatus, eta?: string): Promise<void> {
+	if (status === 'Shipped') {
+		const { data, error: trackingError } = await supabase
+			.from('orders')
+			.select('tracking_number')
+			.eq('id', id)
+			.single();
+		if (trackingError) throw trackingError;
+		if (!data.tracking_number?.trim()) {
+			throw new Error('Save a tracking number before marking this order as shipped.');
+		}
+	}
+
 	const updates = eta ? { status, eta } : { status };
 	const { error } = await supabase.from('orders').update(updates).eq('id', id);
 	if (error) throw error;
@@ -103,9 +130,11 @@ export async function updateOrderStatus(id: string, status: OrderStatus, eta?: s
 }
 
 export async function updateOrderTrackingNumber(id: string, trackingNumber: string): Promise<void> {
+	const normalizedTrackingNumber = trackingNumber.trim();
+	if (!normalizedTrackingNumber) throw new Error('Enter a tracking number before saving.');
 	const { error } = await supabase
 		.from('orders')
-		.update({ tracking_number: trackingNumber.trim() || null })
+		.update({ tracking_number: normalizedTrackingNumber })
 		.eq('id', id);
 	if (error) throw error;
 }

@@ -165,7 +165,15 @@ const Orders_Manager: React.FC<Props> = ({
 											}}
 										>
 											{!statuses.includes(order.status) && <option value="">{order.status}</option>}
-											{statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+											{statuses.map((status) => (
+												<option
+													key={status}
+													value={status}
+													disabled={status === 'Shipped' && !order.tracking_number?.trim()}
+												>
+													{status === 'Shipped' && !order.tracking_number?.trim() ? 'Shipped (save tracking first)' : status}
+												</option>
+											))}
 										</select>
 										{savingStatusId === order.id && <span className="admin-inline-loading" role="status"> Saving...</span>}
 									</td>
@@ -178,7 +186,7 @@ const Orders_Manager: React.FC<Props> = ({
 												value={trackingInputs[order.id] ?? order.tracking_number ?? ''}
 												onChange={(event) => setTrackingInputs((current) => ({ ...current, [order.id]: event.target.value }))}
 											/>
-											<button type="button" disabled={savingTrackingId === order.id} onClick={() => void saveTrackingNumber(order)}>
+											<button type="button" disabled={savingTrackingId === order.id || !(trackingInputs[order.id] ?? order.tracking_number ?? '').trim()} onClick={() => void saveTrackingNumber(order)}>
 												{savingTrackingId === order.id ? 'Saving...' : 'Save'}
 											</button>
 										</div>

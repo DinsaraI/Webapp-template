@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { createProduct } from '../services/productService';
+import { PRODUCT_CATEGORIES, type ProductCategory } from '../types/product';
 
 interface AdminAddProductProps {
   onProductAdded: () => void;
@@ -10,9 +11,9 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [stock, setStock] = useState('0');
+  const [stock, setStock] = useState('');
   const [images, setImages] = useState<File[]>([]);
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState<ProductCategory | ''>('');
   const [tagsInput, setTagsInput] = useState('');
   const [availableSizes, setAvailableSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
   const [loading, setLoading] = useState(false);
@@ -31,6 +32,14 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
       setErrorMessage('Select at least one available size.');
       return;
     }
+    if (!category) {
+      setErrorMessage('Choose a product category.');
+      return;
+    }
+    if (!tagsInput.split(',').some((tag) => tag.trim())) {
+      setErrorMessage('Enter at least one product tag.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -39,14 +48,14 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
         price: Number(price),
         description: description.trim(),
         stock: Number(stock),
-        category: category.trim(),
+        category,
         tags: [...new Set(tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean))],
         available_sizes: availableSizes,
       }, images);
       setTitle('');
       setPrice('');
       setDescription('');
-      setStock('0');
+      setStock('');
       setImages([]);
       setCategory('');
       setTagsInput('');
@@ -71,7 +80,7 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
       <div className="admin-product-form-row">
         <label>
           Price (LKR)
-          <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} min="0" step="0.01" required />
+          <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} min="0.01" step="0.01" required />
         </label>
         <label>
           Stock
@@ -80,11 +89,14 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
       </div>
       <label>
         Category
-        <input value={category} onChange={(event) => setCategory(event.target.value)} maxLength={80} />
+        <select value={category} onChange={(event) => setCategory(event.target.value as ProductCategory | '')} required>
+          <option value="">Choose a category</option>
+          {PRODUCT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
       </label>
       <label>
         Tags (comma-separated)
-        <input value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder="New, Trending, Sale" maxLength={200} />
+        <input value={tagsInput} onChange={(event) => setTagsInput(event.target.value)} placeholder="New, Trending, Sale" maxLength={200} required />
       </label>
       <label>
         Description
@@ -94,8 +106,8 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
         Product images
         <input type="file" accept="image/*" multiple onChange={(event) => setImages(Array.from(event.target.files ?? []))} required />
       </label>
-      <fieldset className="admin-product-sizes">
-        <legend>Available sizes</legend>
+      <fieldset className="admin-product-sizes" aria-required="true">
+        <legend>Available sizes (choose at least one)</legend>
         {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
           <label key={size}>
             <input

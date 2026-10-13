@@ -1,7 +1,33 @@
 import { supabase } from '../supabaseClient';
-import type { NewProduct, Product } from '../types/product';
+import { normalizeProductCategory, type NewProduct, type Product, type ProductCategory } from '../types/product';
 
 const PRODUCT_IMAGE_BUCKET = 'product-images';
+
+function normalizeProductTags(tags: string[] | string | undefined): string[] {
+  return [...new Set((Array.isArray(tags) ? tags : (tags ?? '').split(/[|,]/))
+    .map((tag) => tag.trim())
+    .filter(Boolean))];
+}
+
+function validateProductDetails(product: {
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  category?: string | null;
+  tags?: string[] | string;
+  available_sizes: string[];
+}): asserts product is typeof product & { category: ProductCategory } {
+  if (!product.title.trim()) throw new Error('Enter a product title.');
+  if (!product.description.trim()) throw new Error('Enter a product description.');
+  if (!Number.isFinite(product.price) || product.price <= 0) throw new Error('Enter a price greater than zero.');
+  if (!Number.isInteger(product.stock) || product.stock < 0) throw new Error('Enter a valid stock quantity.');
+  if (!normalizeProductCategory(product.category)) throw new Error('Choose Men, Women, or Children as the product category.');
+  if (normalizeProductTags(product.tags).length === 0) throw new Error('Enter at least one product tag.');
+  if (!Array.isArray(product.available_sizes) || product.available_sizes.length === 0) {
+    throw new Error('Select at least one available size.');
+  }
+}
 
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
@@ -31,6 +57,7 @@ export async function createProduct(
   images: File[],
 ): Promise<Product> {
   if (images.length === 0) throw new Error('Choose at least one product image.');
+  validateProductDetails(product);
   const uploadedPaths: string[] = [];
 
   try {
@@ -53,9 +80,10 @@ export async function createProduct(
       .from('products')
       .insert({
         ...product,
+        tags: normalizeProductTags(product.tags),
         image_url: imageUrls[0],
         images: imageUrls,
-        category: product.category.trim() || null,
+        category: product.category,
       })
       .select('*')
       .single();
@@ -77,9 +105,19 @@ export async function updateProduct(
   productId: string,
   updates: Pick<Product, 'title' | 'description' | 'price' | 'image_url' | 'images' | 'stock' | 'category' | 'tags' | 'available_sizes'>,
 ): Promise<Product> {
+  validateProductDetails(updates);
+  const images = [...new Set(updates.images.map((image) => image.trim()).filter(Boolean))];
+  const tags = normalizeProductTags(updates.tags);
+  if (images.length === 0) throw new Error('Add at least one product image URL.');
   const { data, error } = await supabase
     .from('products')
-    .update({ ...updates, category: updates.category?.trim() || null })
+    .update({
+      ...updates,
+      tags,
+      images,
+      image_url: images[0],
+      category: updates.category,
+    })
     .eq('id', productId)
     .select('*')
     .maybeSingle();

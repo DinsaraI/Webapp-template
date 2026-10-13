@@ -5,6 +5,7 @@ import Footer from '../assets/components/footer';
 import { clearCart, getCart } from '../services/cartService';
 import type { CartItem } from '../services/cartService';
 import { createOrder } from '../services/orderService';
+import type { NewOrder } from '../services/orderService';
 import { getSignedInUser, listShippingAddresses, saveShippingAddress } from '../services/profileService';
 import { supabase } from '../supabaseClient';
 import type { ShippingAddress, ShippingAddressInput } from '../types/profile';
@@ -23,12 +24,6 @@ const emptyAddress = (): ShippingAddressInput => ({
   is_default: false,
 });
 
-type Payment = {
-  cardNumber: string; // store masked/unmasked as needed
-  expiry: string; // MM/YY
-  cvv?: string;
-};
-
 const STORAGE_KEY = 'a2w_checkout_info_v1';
 const SRI_LANKAN_MOBILE_E164 = /^\+947\d{8}$/;
 const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
@@ -38,7 +33,6 @@ const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
 }).format(price);
 
 const Checkout: React.FC = () => {
-  const [payment, setPayment] = useState<Partial<Payment>>({});
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState(NEW_ADDRESS);
@@ -46,8 +40,9 @@ const Checkout: React.FC = () => {
   const [saveAddressForLater, setSaveAddressForLater] = useState(false);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [contactEmail, setContactEmail] = useState('');
-  const [editingPayment, setEditingPayment] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [demoCheckoutOpen, setDemoCheckoutOpen] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<NewOrder | null>(null);
   const [orderError, setOrderError] = useState('');
   const [addressSaveError, setAddressSaveError] = useState('');
   const [orderMessage, setOrderMessage] = useState('');
@@ -58,7 +53,6 @@ const Checkout: React.FC = () => {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.payment) setPayment(parsed.payment);
         if (parsed.shipping) {
           setAddressForm((current) => ({
             ...current,
@@ -68,9 +62,10 @@ const Checkout: React.FC = () => {
             city: parsed.shipping.city || current.city,
           }));
         }
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch {
-      // ignore
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
@@ -119,20 +114,6 @@ const Checkout: React.FC = () => {
     return () => window.removeEventListener('a2w:cart-updated', syncCart);
   }, []);
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const data = new FormData(form);
-    const rawCard = String(data.get('cardNumber') || '').replace(/\s+/g, '');
-    const p: Partial<Payment> = {
-      cardNumber: rawCard,
-      expiry: String(data.get('expiry') || '').trim(),
-      cvv: String(data.get('cvv') || '').trim(),
-    };
-    setPayment(p);
-    setEditingPayment(false);
-  };
-
   const handlePlaceOrder = async () => {
     if (placingOrderRef.current) return;
     const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
@@ -164,14 +145,12 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    placingOrderRef.current = true;
-    setIsPlacingOrder(true);
     setOrderError('');
     setAddressSaveError('');
     setOrderMessage('');
     try {
       await getSignedInUser();
-      const order = await createOrder({
+      setPendingOrder({
         customerName,
         customerEmail,
         customerPhone,
@@ -188,19 +167,29 @@ const Checkout: React.FC = () => {
           return { productId: item.id, quantity: item.qty ?? 1, size: item.size };
         }),
       });
+      setDemoCheckoutOpen(true);
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : 'Checkout details could not be validated.');
+    }
+  };
+
+  const confirmDemoPayment = async () => {
+    if (!pendingOrder || placingOrderRef.current) return;
+    placingOrderRef.current = true;
+    setIsPlacingOrder(true);
+    setOrderError('');
+    try {
+      const order = await createOrder(pendingOrder, Math.round(grandTotal * 100));
+      setDemoCheckoutOpen(false);
+      setPendingOrder(null);
       clearCart();
       setCartItems([]);
-      setOrderMessage(`Order ORD-${String(order.order_number).padStart(6, '0')} placed successfully.`);
+      setOrderMessage(`Demo payment confirmed. Order ORD-${String(order.order_number).padStart(6, '0')} placed successfully.`);
+      const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
       if (!selectedAddress && saveAddressForLater) {
         try {
           const savedAddress = await saveShippingAddress({
-            ...shippingAddress,
-            recipient_name: customerName,
-            phone_number: customerPhone,
-            street_address: shippingAddress.street_address.trim(),
-            city: shippingAddress.city.trim(),
-            postal_code: shippingAddress.postal_code.trim(),
-            country: shippingAddress.country.trim() || 'Sri Lanka',
+            ...pendingOrder.shippingAddress,
             is_default: addresses.length === 0,
           });
           setAddresses((current) => [...current, savedAddress]);
@@ -210,7 +199,7 @@ const Checkout: React.FC = () => {
         }
       }
     } catch (error) {
-      setOrderError(error instanceof Error ? error.message : 'The order could not be placed.');
+      setOrderError(error instanceof Error ? error.message : 'The demo payment could not be confirmed. No order was created.');
     } finally {
       placingOrderRef.current = false;
       setIsPlacingOrder(false);
@@ -222,11 +211,6 @@ const Checkout: React.FC = () => {
   const grandTotal = subtotal + shippingFee;
 
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
-  const maskCard = (n?: string) => {
-    if (!n) return '';
-    const last4 = n.slice(-4);
-    return `•••• •••• •••• ${last4}`;
-  };
 
   return (
     <div className="checkout-page">
@@ -312,30 +296,9 @@ const Checkout: React.FC = () => {
               )}
             </div>
 
-            <div className="co-section">
-              <div className="co-section-head">
-                <h2>Payment</h2>
-                <button className="small" onClick={() => setEditingPayment((v) => !v)}>{editingPayment ? 'Close' : payment.cardNumber ? 'Edit' : 'Add'}</button>
-              </div>
-
-              {payment && payment.cardNumber && !editingPayment ? (
-                <div className="co-card">
-                  <div className="co-card-title">{maskCard(payment.cardNumber)}</div>
-                  <div className="co-card-body">Expiry: {payment.expiry}</div>
-                </div>
-              ) : null}
-
-              {editingPayment ? (
-                <form className="co-form" onSubmit={handlePaymentSubmit}>
-                  <label>Card number<input name="cardNumber" defaultValue={payment.cardNumber || ''} inputMode="numeric" required /></label>
-                  <label>Expiry (MM/YY)<input name="expiry" defaultValue={payment.expiry || ''} placeholder="MM/YY" required /></label>
-                  <label>CVV<input name="cvv" defaultValue={payment.cvv || ''} inputMode="numeric" required /></label>
-                  <div className="form-row">
-                    <button type="submit" className="btn-primary">Save</button>
-                    <button type="button" onClick={() => setEditingPayment(false)} className="btn-ghost">Cancel</button>
-                  </div>
-                </form>
-              ) : null}
+            <div className="co-section payhere-demo-notice">
+              <h2>Secure checkout</h2>
+              <p>You will continue to a PayHere demo checkout. No real payment will be taken.</p>
             </div>
           </div>
 
@@ -364,7 +327,7 @@ const Checkout: React.FC = () => {
               <div className="checkout-actions">
                 <button className="btn-primary" type="button" onClick={() => void handlePlaceOrder()} disabled={isPlacingOrder || cartItems.length === 0 || addressesLoading}>
                   {isPlacingOrder && <LoaderCircle className="co-spinner" size={17} aria-hidden="true" />}
-                  {isPlacingOrder ? 'Placing order...' : 'Place Order'}
+                  {isPlacingOrder ? 'Waiting for confirmation...' : 'Continue to PayHere (Demo)'}
                 </button>
                 {orderError && <p className="co-error" role="alert">{orderError}</p>}
                 {addressSaveError && <p role="alert">{addressSaveError}</p>}
@@ -374,6 +337,35 @@ const Checkout: React.FC = () => {
           </aside>
         </section>
       </main>
+
+      {demoCheckoutOpen && (
+        <div className="demo-payment-backdrop" role="presentation">
+          <section className="demo-payment-panel" role="dialog" aria-modal="true" aria-labelledby="demo-payment-title">
+            <p className="demo-payment-label">PAYHERE · DEMO CHECKOUT</p>
+            <h2 id="demo-payment-title">Complete demo payment</h2>
+            <p>This preview does not connect to PayHere or charge a payment method.</p>
+            <div className="demo-payment-total">
+              <span>Amount</span>
+              <strong>{formatPrice(grandTotal)}</strong>
+            </div>
+            <button type="button" className="btn-primary" onClick={() => void confirmDemoPayment()} disabled={isPlacingOrder}>
+              {isPlacingOrder ? 'Fetching demo confirmation...' : 'Simulate successful payment'}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              disabled={isPlacingOrder}
+              onClick={() => {
+                setDemoCheckoutOpen(false);
+                setPendingOrder(null);
+              }}
+            >
+              Cancel
+            </button>
+            {orderError && <p className="co-error" role="alert">{orderError}</p>}
+          </section>
+        </div>
+      )}
 
       <Footer />
     </div>

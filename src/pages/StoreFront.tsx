@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../assets/components/navbar';
 import Footer from '../assets/components/footer';
 import { getProducts } from '../services/productService';
-import type { Product } from '../types/product';
+import { normalizeProductCategory, PRODUCT_CATEGORIES, type Product } from '../types/product';
 import './StoreFront.css';
 
 interface StoreFrontProps {
@@ -18,7 +18,7 @@ const formatPrice = (price: number) => new Intl.NumberFormat('en-LK', {
 }).format(price);
 
 export default function StoreFront({ isSignedIn = false, onSignOut }: StoreFrontProps) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -38,10 +38,10 @@ export default function StoreFront({ isSignedIn = false, onSignOut }: StoreFront
     return () => { active = false; };
   }, []);
 
-  const category = searchParams.get('category')?.trim().toLocaleLowerCase();
+  const selectedCategory = normalizeProductCategory(searchParams.get('category'));
   const tag = searchParams.get('tag')?.trim().toLocaleLowerCase();
   const visibleProducts = products.filter((product) => {
-    const matchesCategory = !category || (product.category ?? '').toLocaleLowerCase() === category;
+    const matchesCategory = !selectedCategory || normalizeProductCategory(product.category) === selectedCategory;
     const tags = Array.isArray(product.tags) ? product.tags : [product.tags ?? ''];
     const matchesTag = !tag || tags.some((productTag) => productTag.toLocaleLowerCase() === tag);
     return matchesCategory && matchesTag;
@@ -54,6 +54,23 @@ export default function StoreFront({ isSignedIn = false, onSignOut }: StoreFront
         <header className="storefront-heading">
           <p className="storefront-kicker">A2W COLLECTION</p>
           <h1>Shop the collection</h1>
+          <label className="storefront-category-filter">
+            <span>Filter by category</span>
+            <select
+              value={selectedCategory ?? ''}
+              onChange={(event) => {
+                const nextParams = new URLSearchParams(searchParams);
+                if (event.target.value) nextParams.set('category', event.target.value);
+                else nextParams.delete('category');
+                setSearchParams(nextParams);
+              }}
+            >
+              <option value="">All categories</option>
+              {PRODUCT_CATEGORIES.map((category) => (
+                <option key={category.value} value={category.value}>{category.label}</option>
+              ))}
+            </select>
+          </label>
         </header>
         {loading && <p className="storefront-state" role="status">Loading products...</p>}
         {errorMessage && <p className="storefront-state error" role="alert">{errorMessage}</p>}

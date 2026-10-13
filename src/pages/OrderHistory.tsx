@@ -88,6 +88,11 @@ export default function OrderHistory({ isSignedIn, onSignOut }: OrderHistoryProp
 									<span>Total paid</span>
 									<strong>{formatPrice(order.amount)}</strong>
 								</footer>
+								{order.tracking_number && (
+									<p className="order-history-tracking">
+										Tracking number: <strong>{order.tracking_number}</strong>
+									</p>
+								)}
 							</article>
 						))}
 					</div>

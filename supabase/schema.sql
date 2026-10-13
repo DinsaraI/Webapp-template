@@ -246,6 +246,41 @@ alter table public.products
   add column if not exists is_archived boolean not null default false;
 
 update public.products
+set category = case lower(btrim(category))
+  when 'men' then 'men'
+  when 'mens' then 'men'
+  when 'men''s' then 'men'
+  when 'women' then 'women'
+  when 'womens' then 'women'
+  when 'women''s' then 'women'
+  when 'child' then 'children'
+  when 'children' then 'children'
+  when 'childrens' then 'children'
+  when 'children''s' then 'children'
+  when 'kids' then 'children'
+end
+where lower(btrim(category)) in (
+  'men', 'mens', 'men''s', 'women', 'womens', 'women''s',
+  'child', 'children', 'childrens', 'children''s', 'kids'
+);
+
+alter table public.products
+  drop constraint if exists products_required_details_check;
+
+alter table public.products
+  add constraint products_required_details_check
+  check (
+    nullif(btrim(title), '') is not null
+    and nullif(btrim(description), '') is not null
+    and price > 0
+    and nullif(btrim(image_url), '') is not null
+    and category in ('men', 'women', 'children')
+    and cardinality(available_sizes) > 0
+    and cardinality(tags) > 0
+    and array_to_string(tags, '') ~ '[^[:space:]]'
+  ) not valid;
+
+update public.products
 set images = array[image_url]
 where cardinality(images) = 0 and image_url <> '';
 
@@ -278,13 +313,15 @@ create table if not exists public.orders (
     check (status in ('Pending', 'Paid', 'Confirmed', 'Shipped', 'Declined', 'Cancellation Pending', 'Cancelled')),
   eta date,
   tracking_number text,
+  payment_reference text,
   created_at timestamptz not null default now()
 );
 
 alter table public.orders
   add column if not exists shipping_address jsonb not null default '{}'::jsonb,
   add column if not exists user_id uuid references auth.users (id) on delete cascade,
-  add column if not exists tracking_number text;
+  add column if not exists tracking_number text,
+  add column if not exists payment_reference text;
 
 update public.orders as customer_order
 set items = (
@@ -367,6 +404,24 @@ create policy "Admins can update orders"
   to authenticated
   using ((select public.is_admin()))
   with check ((select public.is_admin()));
+
+create or replace function public.require_tracking_before_shipping()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status = 'Shipped' and nullif(btrim(new.tracking_number), '') is null then
+    raise exception 'A tracking number must be saved before an order can be shipped.' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_require_tracking_before_shipping on public.orders;
+create trigger orders_require_tracking_before_shipping
+  before insert or update of status, tracking_number on public.orders
+  for each row execute function public.require_tracking_before_shipping();
 
 create table if not exists public.site_settings (
   id boolean primary key default true check (id),
@@ -534,7 +589,7 @@ begin
       notification_message := order_label || ' is being prepared for delivery.';
     when 'Shipped' then
       notification_title := 'Order shipped';
-      notification_message := order_label || ' has shipped.';
+      notification_message := order_label || ' has shipped. Tracking number: ' || coalesce(nullif(btrim(new.tracking_number), ''), 'not available') || '.';
     when 'Delivered' then
       notification_title := 'Order delivered';
       notification_message := order_label || ' has been delivered.';
@@ -558,14 +613,19 @@ create trigger orders_notify_status_change
   after insert or update on public.orders
   for each row execute function public.notify_order_status_change();
 
-drop function if exists public.place_order(text, text, text, jsonb);
+drop function if exists public.place_order(text, text, text, jsonb, jsonb);
+drop function if exists public.place_order(text, text, text, jsonb, jsonb, text);
+drop function if exists public.place_order(uuid, text, text, text, jsonb, jsonb, text);
 
 create or replace function public.place_order(
+  p_user_id uuid,
   p_customer_name text,
   p_customer_email text,
   p_customer_phone text,
   p_items jsonb,
-  p_shipping_address jsonb
+  p_shipping_address jsonb,
+  p_payment_amount_cents bigint,
+  p_payment_reference text
 )
 returns table (id uuid, order_number bigint)
 language plpgsql
@@ -584,8 +644,8 @@ declare
   order_total numeric(12, 2) := 0;
   shipping_fee numeric(12, 2) := 0;
 begin
-  if (select auth.uid()) is null then
-    raise exception 'Sign in is required to place an order.' using errcode = '42501';
+  if p_user_id is null then
+    raise exception 'A signed-in customer is required to place an order.' using errcode = '42501';
   end if;
 
   if nullif(btrim(p_customer_name), '') is null
@@ -594,8 +654,12 @@ begin
     raise exception 'Customer name, email, and phone are required.' using errcode = '22023';
   end if;
 
-  if lower(btrim(p_customer_email)) <> lower(coalesce((select auth.jwt() ->> 'email'), '')) then
+  if lower(btrim(p_customer_email)) <> lower(coalesce((select email from auth.users where id = p_user_id), '')) then
     raise exception 'Order email must match the signed-in account.' using errcode = '42501';
+  end if;
+
+  if nullif(btrim(p_payment_reference), '') is null then
+    raise exception 'A completed payment confirmation is required before placing an order.' using errcode = '22023';
   end if;
 
   if btrim(p_customer_phone) !~ '^\+947[0-9]{8}$'
@@ -670,10 +734,17 @@ begin
     shipping_fee := 500;
   end if;
 
+  if p_payment_amount_cents is null
+    or round((order_total + shipping_fee) * 100)::bigint <> p_payment_amount_cents then
+    raise exception 'The confirmed payment amount does not match the order total.' using errcode = '22023';
+  end if;
+
   return query
-  insert into public.orders as created (user_id, customer_name, customer_email, customer_phone, shipping_address, items, amount)
+  insert into public.orders as created (
+    user_id, customer_name, customer_email, customer_phone, shipping_address, items, amount, status, payment_reference
+  )
   values (
-    (select auth.uid()),
+    p_user_id,
     btrim(p_customer_name),
     btrim(p_customer_email),
     btrim(p_customer_phone),
@@ -686,14 +757,16 @@ begin
       'country', btrim(p_shipping_address ->> 'country')
     ),
     order_items,
-    order_total + shipping_fee
+    order_total + shipping_fee,
+    'Paid',
+    btrim(p_payment_reference)
   )
   returning created.id, created.order_number;
 end;
 $$;
 
-revoke all on function public.place_order(text, text, text, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function public.place_order(text, text, text, jsonb, jsonb) to authenticated;
+revoke all on function public.place_order(uuid, text, text, text, jsonb, jsonb, bigint, text) from public, anon, authenticated;
+grant execute on function public.place_order(uuid, text, text, text, jsonb, jsonb, bigint, text) to service_role;
 
 alter table public.products enable row level security;
 

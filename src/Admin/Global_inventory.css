@@ -58,7 +58,8 @@
 }
 
 .admin-product-form input,
-.admin-product-form textarea {
+.admin-product-form textarea,
+.admin-product-form select {
 	box-sizing: border-box;
 	width: 100%;
 	min-height: 40px;

@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
 import FacebookIcon from '../images/facebook.png';
 import InstagramIcon from '../images/instagram.png';
-import MasterCardIcon from '../images/card.png';
-import VisaIcon from '../images/visa.png';
 import './footer.css';
 
 const currentYear = new Date().getFullYear();
@@ -28,6 +26,7 @@ export default function Footer() {
           <h2>Shop</h2>
           <Link to="/shop?category=women">Women</Link>
           <Link to="/shop?category=men">Men</Link>
+          <Link to="/shop?category=children">Children</Link>
           <Link to="/shop?tag=New">New Arrivals</Link>
           <Link to="/shop?tag=Sale">Sale</Link>
         </nav>
@@ -41,16 +40,6 @@ export default function Footer() {
           <Link to="/policies/terms">Terms of Service</Link>
         </nav>
 
-        <section className="footer-payments-section" aria-labelledby="footer-payments-title">
-          <h2 id="footer-payments-title">Payment methods</h2>
-          <div className="footer-payments">
-            <span className="footer-payment-method">Cash on Delivery</span>
-            <span className="footer-payment-method">Bank Transfer</span>
-            <img src={VisaIcon} alt="Visa" className="footer-icon" />
-            <img src={MasterCardIcon} alt="Mastercard" className="footer-icon" />
-          </div>
-          <p>Available payment options are shown at checkout.</p>
-        </section>
       </div>
 
       <div className="footer-bottom">

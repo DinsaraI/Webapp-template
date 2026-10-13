@@ -33,7 +33,7 @@
 .admin-page-root .logout-btn{padding:8px 16px;background:#e5e7eb;color:var(--accent);border:1px solid #d1d5db;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.3s ease}
 .admin-page-root .logout-btn:hover{background:#d1d5db;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
 
-.admin-page-root .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:20px}
+.admin-page-root .metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}
 .admin-page-root .card{background:linear-gradient(180deg, var(--surface), rgba(255,255,255,0.9));padding:20px;border-radius:12px;box-shadow:var(--shadow);min-width:160px;border:1px solid rgba(15,23,42,0.03)}
 .admin-page-root .card h3{margin:0;font-size:13px;color:var(--muted);font-weight:600}
 .admin-page-root .card p{margin-top:8px;font-size:20px;font-weight:700;color:var(--accent)}
@@ -60,10 +60,6 @@
 .admin-page-root .product-card.removed{opacity:0.6}
 .admin-page-root .takedown{color:#b91c1c;font-weight:600}
 
-.admin-page-root .ledger{width:100%;border-collapse:collapse;margin-top:12px;background:transparent}
-.admin-page-root .ledger th{padding:12px 10px;text-transform:uppercase;color:var(--muted);font-size:12px}
-.admin-page-root .ledger td{padding:12px 10px;border-bottom:1px solid rgba(15,23,42,0.04);background:var(--surface)}
-
 .admin-page-root .modal-backdrop{position:fixed;inset:0;background:linear-gradient(rgba(2,6,23,0.45), rgba(2,6,23,0.45));display:flex;align-items:center;justify-content:center;padding:20px}
 .admin-page-root .modal{background:var(--surface);padding:20px;border-radius:12px;width:min(100%,420px);min-width:0;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:0 20px 60px rgba(2,6,23,0.6)}
 .admin-page-root .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
@@ -79,7 +75,7 @@
 @media(max-width:700px){.admin-page-root .admin-main{padding:18px}.admin-page-root .metrics{grid-template-columns:minmax(0,1fr)}.admin-page-root .dash header{align-items:flex-start;gap:16px}.admin-page-root .dash header h1{font-size:24px}}
 
 .admin-table-scroll{width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-.admin-page-root .orders-table,.admin-page-root .ledger{min-width:880px}
+.admin-page-root .orders-table{min-width:880px}
 
 .admin-page-root .order-row-clickable{cursor:pointer}
 .admin-page-root .orders-table .order-detail-link{margin:0;padding:0;border:0;background:transparent;color:#654714;font-weight:700;text-decoration:underline}

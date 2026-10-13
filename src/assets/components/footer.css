@@ -8,7 +8,7 @@
 
 .footer-main {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 1.2fr 1fr;
+  grid-template-columns: 1.2fr 0.8fr 1.2fr;
   gap: 36px;
   max-width: 1280px;
   margin: 0 auto;
@@ -16,8 +16,7 @@
 }
 
 .footer-brand,
-.footer-column,
-.footer-payments-section {
+.footer-column {
   min-width: 0;
 }
 
@@ -38,8 +37,7 @@
   line-height: 1.6;
 }
 
-.footer-social,
-.footer-payments {
+.footer-social {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -61,8 +59,7 @@
   object-fit: contain;
 }
 
-.footer-column h2,
-.footer-payments-section h2 {
+.footer-column h2 {
   margin: 4px 0 16px;
   color: var(--bg);
   font-size: 0.88rem;
@@ -86,25 +83,6 @@
   color: var(--bg);
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.footer-payment-method {
-  display: inline-flex;
-  min-height: 30px;
-  align-items: center;
-  padding: 0 9px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  color: #e0e0dc;
-  font-size: 0.72rem;
-  white-space: nowrap;
-}
-
-.footer-payments-section > p {
-  margin: 14px 0 0;
-  color: #aeadab;
-  font-size: 0.78rem;
-  line-height: 1.5;
 }
 
 .footer-bottom {
@@ -152,8 +130,7 @@
     padding: 32px 20px;
   }
 
-  .footer-column h2,
-  .footer-payments-section h2 {
+  .footer-column h2 {
     margin-bottom: 12px;
   }
 

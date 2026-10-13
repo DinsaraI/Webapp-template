@@ -32,6 +32,25 @@
   font-weight: 500;
 }
 
+.storefront-category-filter {
+  display: grid;
+  width: min(100%, 280px);
+  gap: 7px;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.storefront-category-filter select {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
 .storefront-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
