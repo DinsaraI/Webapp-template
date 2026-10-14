@@ -233,6 +233,7 @@ create table if not exists public.products (
   image_url text not null,
   images text[] not null default '{}',
   available_sizes text[] not null default array['XS', 'S', 'M', 'L', 'XL', 'XXL']::text[],
+  size_system text,
   category text,
   tags text[] not null default '{}',
   stock integer not null default 0 check (stock >= 0)
@@ -241,6 +242,7 @@ create table if not exists public.products (
 alter table public.products
   add column if not exists images text[] not null default '{}',
   add column if not exists available_sizes text[] not null default array['XS', 'S', 'M', 'L', 'XL', 'XXL']::text[],
+  add column if not exists size_system text,
   add column if not exists category text,
   add column if not exists tags text[] not null default '{}',
   add column if not exists is_archived boolean not null default false;
@@ -274,8 +276,21 @@ alter table public.products
     and nullif(btrim(description), '') is not null
     and price > 0
     and nullif(btrim(image_url), '') is not null
-    and category in ('men', 'women', 'children')
-    and cardinality(available_sizes) > 0
+    and category in ('men', 'women', 'children', 'bags', 'footwear-men', 'footwear-women')
+    and (
+      (category = 'bags' and size_system is null and cardinality(available_sizes) = 0)
+      or (
+        category in ('footwear-men', 'footwear-women')
+        and size_system in ('US', 'UK')
+        and cardinality(available_sizes) > 0
+        and array_to_string(available_sizes, ',') ~ '^[1-9][0-9]*([.]5)?(,[1-9][0-9]*([.]5)?)*$'
+      )
+      or (
+        category in ('men', 'women', 'children')
+        and size_system is null
+        and cardinality(available_sizes) > 0
+      )
+    )
     and cardinality(tags) > 0
     and array_to_string(tags, '') ~ '[^[:space:]]'
   ) not valid;
@@ -638,6 +653,8 @@ declare
   product_price numeric(12, 2);
   product_stock integer;
   product_sizes text[];
+  product_category text;
+  product_size_system text;
   product_image text;
   product_is_archived boolean;
   order_items jsonb := '[]'::jsonb;
@@ -684,20 +701,16 @@ begin
   end if;
 
   for order_line in
-    select product_id, quantity, size
-    from jsonb_to_recordset(p_items) as requested(product_id uuid, quantity integer, size text)
+    select product_id, quantity, size, size_system
+    from jsonb_to_recordset(p_items) as requested(product_id uuid, quantity integer, size text, size_system text)
   loop
     if order_line.product_id is null or order_line.quantity is null
       or order_line.quantity < 1 or order_line.quantity > 20 then
       raise exception 'Order item quantity is invalid.' using errcode = '22023';
     end if;
 
-    if nullif(btrim(order_line.size), '') is null then
-      raise exception 'A size must be selected for every product.' using errcode = '22023';
-    end if;
-
-    select product.title, product.price, product.stock, product.available_sizes, product.image_url, product.is_archived
-    into product_title, product_price, product_stock, product_sizes, product_image, product_is_archived
+    select product.title, product.price, product.stock, product.available_sizes, product.category, product.size_system, product.image_url, product.is_archived
+    into product_title, product_price, product_stock, product_sizes, product_category, product_size_system, product_image, product_is_archived
     from public.products as product
     where product.id = order_line.product_id
     for update;
@@ -711,8 +724,24 @@ begin
     if product_stock < order_line.quantity then
       raise exception 'There is not enough stock for %.', product_title using errcode = '22023';
     end if;
-    if not (product_sizes @> array[btrim(order_line.size)]::text[]) then
-      raise exception 'The selected size for % is no longer available.', product_title using errcode = '22023';
+    if product_category = 'bags' then
+      if nullif(btrim(order_line.size), '') is not null or order_line.size_system is not null then
+        raise exception 'Bags do not use sizes.' using errcode = '22023';
+      end if;
+    else
+      if nullif(btrim(order_line.size), '') is null then
+        raise exception 'A size must be selected for every product except bags.' using errcode = '22023';
+      end if;
+      if product_category in ('footwear-men', 'footwear-women') then
+        if order_line.size_system is distinct from product_size_system then
+          raise exception 'Choose a footwear size in the product sizing system.' using errcode = '22023';
+        end if;
+      elsif order_line.size_system is not null then
+        raise exception 'A footwear sizing system cannot be used for this product.' using errcode = '22023';
+      end if;
+      if not (product_sizes @> array[btrim(order_line.size)]::text[]) then
+        raise exception 'The selected size for % is no longer available.', product_title using errcode = '22023';
+      end if;
     end if;
 
     update public.products
@@ -723,7 +752,11 @@ begin
     order_items := order_items || jsonb_build_array(jsonb_build_object(
       'productId', order_line.product_id,
       'title', product_title,
-      'size', btrim(order_line.size),
+      'size', case
+        when product_category = 'bags' then null
+        when product_size_system is not null then product_size_system || ' ' || btrim(order_line.size)
+        else btrim(order_line.size)
+      end,
       'quantity', order_line.quantity,
       'unitPrice', product_price,
       'imageUrl', product_image

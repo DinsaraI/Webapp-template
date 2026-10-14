@@ -163,8 +163,13 @@ const Checkout: React.FC = () => {
           country: shippingAddress.country.trim() || 'Sri Lanka',
         },
         items: cartItems.map((item) => {
-          if (!item.size) throw new Error(`Choose a size for ${item.name} before checking out.`);
-          return { productId: item.id, quantity: item.qty ?? 1, size: item.size };
+          if (item.sizeRequired !== false && !item.size) throw new Error(`Choose a size for ${item.name} before checking out.`);
+          return {
+            productId: item.id,
+            quantity: item.qty ?? 1,
+            size: item.size,
+            sizeSystem: item.sizeSystem,
+          };
         }),
       });
       setDemoCheckoutOpen(true);
@@ -310,7 +315,7 @@ const Checkout: React.FC = () => {
                 <p>Your cart is empty.</p>
               ) : cartItems.map((item) => (
                 <div className="summary-row" key={`${item.id}-${item.size ?? 'no-size'}`}>
-                  <span>{item.name}{item.size ? ` · ${item.size}` : ''} × {item.qty ?? 1}</span>
+                  <span>{item.name}{item.size ? ` · ${item.sizeSystem ? `${item.sizeSystem} ` : ''}${item.size}` : ''} × {item.qty ?? 1}</span>
                   <span>{formatPrice(parseCartItemPrice(item.price) * (item.qty ?? 1))}</span>
                 </div>
               ))}

@@ -1,3 +1,5 @@
+import type { ProductSizeSystem } from '../types/product';
+
 export type CartItem = {
   id: string;
   name: string;
@@ -5,6 +7,8 @@ export type CartItem = {
   image?: string;
   qty?: number;
   size?: string;
+  sizeSystem?: ProductSizeSystem;
+  sizeRequired?: boolean;
 };
 
 const CART_KEY = 'a2w_cart_v1';
@@ -28,7 +32,7 @@ export const getCart = () => read();
 
 export const addItem = (item: CartItem) => {
   const items = read();
-  const idx = items.findIndex((i) => i.id === item.id && i.size === item.size);
+  const idx = items.findIndex((i) => i.id === item.id && i.size === item.size && i.sizeSystem === item.sizeSystem);
   if (idx >= 0) {
     items[idx].qty = Math.min(20, (items[idx].qty || 1) + (item.qty || 1));
   } else {
@@ -41,17 +45,17 @@ export const addItem = (item: CartItem) => {
   window.dispatchEvent(new CustomEvent('a2w:cart-added', { detail: item }));
 };
 
-export const removeItem = (id: string, size?: string) => {
-  const items = read().filter((i) => i.id !== id || i.size !== size);
+export const removeItem = (id: string, size?: string, sizeSystem?: ProductSizeSystem) => {
+  const items = read().filter((i) => i.id !== id || i.size !== size || i.sizeSystem !== sizeSystem);
   write(items);
 };
 
-export const updateQuantity = (id: string, size: string | undefined, quantity: number) => {
+export const updateQuantity = (id: string, size: string | undefined, quantity: number, sizeSystem?: ProductSizeSystem) => {
   const items = read();
   const nextQuantity = Number.isFinite(quantity) ? Math.min(20, Math.floor(quantity)) : 1;
   const updatedItems = nextQuantity < 1
-    ? items.filter((item) => item.id !== id || item.size !== size)
-    : items.map((item) => item.id === id && item.size === size ? { ...item, qty: nextQuantity } : item);
+    ? items.filter((item) => item.id !== id || item.size !== size || item.sizeSystem !== sizeSystem)
+    : items.map((item) => item.id === id && item.size === size && item.sizeSystem === sizeSystem ? { ...item, qty: nextQuantity } : item);
   write(updatedItems);
 };
 

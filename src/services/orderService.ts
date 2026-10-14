@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import type { Order, OrderStatus } from '../Admin/types';
 import type { CustomerOrder } from '../types/order';
+import type { ProductSizeSystem } from '../types/product';
 import { getSignedInUser } from './profileService';
 
 export interface NewOrder {
@@ -15,7 +16,7 @@ export interface NewOrder {
 		postal_code: string;
 		country: string;
 	};
-	items: { productId: string; quantity: number; size: string }[];
+	items: { productId: string; quantity: number; size?: string; sizeSystem?: ProductSizeSystem }[];
 }
 
 export class OrderNotificationError extends Error {

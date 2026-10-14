@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient';
-import { normalizeProductCategory, type NewProduct, type Product, type ProductCategory } from '../types/product';
+import { isFootwearCategory, normalizeProductCategory, type NewProduct, type Product, type ProductCategory } from '../types/product';
 
 const PRODUCT_IMAGE_BUCKET = 'product-images';
 
@@ -17,15 +17,31 @@ function validateProductDetails(product: {
   category?: string | null;
   tags?: string[] | string;
   available_sizes: string[];
+  size_system?: string | null;
 }): asserts product is typeof product & { category: ProductCategory } {
   if (!product.title.trim()) throw new Error('Enter a product title.');
   if (!product.description.trim()) throw new Error('Enter a product description.');
   if (!Number.isFinite(product.price) || product.price <= 0) throw new Error('Enter a price greater than zero.');
   if (!Number.isInteger(product.stock) || product.stock < 0) throw new Error('Enter a valid stock quantity.');
-  if (!normalizeProductCategory(product.category)) throw new Error('Choose Men, Women, or Children as the product category.');
+  const category = normalizeProductCategory(product.category);
+  if (!category) throw new Error('Choose a valid product category.');
   if (normalizeProductTags(product.tags).length === 0) throw new Error('Enter at least one product tag.');
-  if (!Array.isArray(product.available_sizes) || product.available_sizes.length === 0) {
+  if (!Array.isArray(product.available_sizes)) throw new Error('Product sizes must be a list.');
+  if (category === 'bags') {
+    if (product.available_sizes.length > 0 || product.size_system) {
+      throw new Error('Bags do not have sizes or a sizing system.');
+    }
+  } else if (isFootwearCategory(category)) {
+    if (product.size_system !== 'US' && product.size_system !== 'UK') {
+      throw new Error('Choose US or UK sizing for footwear.');
+    }
+    if (product.available_sizes.length === 0 || product.available_sizes.some((size) => !/^[1-9]\d*(?:\.5)?$/.test(size))) {
+      throw new Error('Select at least one valid numerical footwear size.');
+    }
+  } else if (product.available_sizes.length === 0) {
     throw new Error('Select at least one available size.');
+  } else if (product.size_system) {
+    throw new Error('US or UK sizing is only available for footwear.');
   }
 }
 
@@ -84,6 +100,7 @@ export async function createProduct(
         image_url: imageUrls[0],
         images: imageUrls,
         category: product.category,
+        size_system: product.size_system,
       })
       .select('*')
       .single();
@@ -103,7 +120,7 @@ export async function createProduct(
 
 export async function updateProduct(
   productId: string,
-  updates: Pick<Product, 'title' | 'description' | 'price' | 'image_url' | 'images' | 'stock' | 'category' | 'tags' | 'available_sizes'>,
+  updates: Pick<Product, 'title' | 'description' | 'price' | 'image_url' | 'images' | 'stock' | 'category' | 'tags' | 'available_sizes' | 'size_system'>,
 ): Promise<Product> {
   validateProductDetails(updates);
   const images = [...new Set(updates.images.map((image) => image.trim()).filter(Boolean))];
@@ -117,6 +134,7 @@ export async function updateProduct(
       images,
       image_url: images[0],
       category: updates.category,
+      size_system: updates.size_system,
     })
     .eq('id', productId)
     .select('*')

@@ -6,7 +6,7 @@ import { addItem } from '../services/cartService';
 import { logout } from '../services/authService';
 import { getProduct } from '../services/productService';
 import { supabase } from '../supabaseClient';
-import type { Product } from '../types/product';
+import { isFootwearCategory, type Product } from '../types/product';
 import './Product-detail-page.css';
 
 interface ProductDetailProps {
@@ -33,6 +33,10 @@ const ProductDetailPage: React.FC<ProductDetailProps> = (props) => {
 	const [errorMessage, setErrorMessage] = useState('');
 	const [cartMessage, setCartMessage] = useState('');
 	const [routeIsSignedIn, setRouteIsSignedIn] = useState(false);
+	const requiresSize = product?.category !== 'bags';
+	const selectedSizeLabel = selectedSize
+		? `${isFootwearCategory(product?.category) ? `${product?.size_system ?? ''} ` : ''}${selectedSize}`.trim()
+		: '';
 
 	useEffect(() => {
 		if (props.isSignedIn !== undefined) return;
@@ -75,15 +79,17 @@ const ProductDetailPage: React.FC<ProductDetailProps> = (props) => {
 	}, [id]);
 
 	const handleAddToCart = () => {
-		if (!product || product.stock < 1 || !selectedSize) return;
+		if (!product || product.stock < 1 || (requiresSize && !selectedSize)) return;
 		addItem({
 			id: product.id,
 			name: product.title,
 			price: formatPrice(product.price),
 			image: product.image_url,
-			size: selectedSize,
+			size: selectedSize || undefined,
+			sizeSystem: isFootwearCategory(product.category) ? product.size_system ?? undefined : undefined,
+			sizeRequired: requiresSize,
 		});
-		setCartMessage(`${product.title} (${selectedSize}) added to your cart.`);
+		setCartMessage(`${product.title}${selectedSizeLabel ? ` (${selectedSizeLabel})` : ''} added to your cart.`);
 	};
 
 	const handleRouteSignOut = async () => {
@@ -137,29 +143,31 @@ const ProductDetailPage: React.FC<ProductDetailProps> = (props) => {
 								{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
 							</p>
 
-							<fieldset className="pd-size-selector" disabled={product.stock < 1}>
-								<legend>Select size</legend>
-								<div className="pd-size-options">
-									{(product.available_sizes ?? []).map((size) => (
-										<button
-											type="button"
-											key={size}
-											className={selectedSize === size ? 'selected' : ''}
-											onClick={() => { setSelectedSize(size); setCartMessage(''); }}
-											aria-pressed={selectedSize === size}
-										>
-											{size}
-										</button>
-									))}
-								</div>
-								{product.available_sizes?.length === 0 && <p>No sizes are currently available.</p>}
-							</fieldset>
+							{requiresSize && (
+								<fieldset className="pd-size-selector" disabled={product.stock < 1}>
+									<legend>{isFootwearCategory(product.category) ? `Select ${product.size_system ?? 'US'} size` : 'Select size'}</legend>
+									<div className="pd-size-options">
+										{(product.available_sizes ?? []).map((size) => (
+											<button
+												type="button"
+												key={size}
+												className={selectedSize === size ? 'selected' : ''}
+												onClick={() => { setSelectedSize(size); setCartMessage(''); }}
+												aria-pressed={selectedSize === size}
+											>
+												{size}
+											</button>
+										))}
+									</div>
+									{product.available_sizes?.length === 0 && <p>No sizes are currently available.</p>}
+								</fieldset>
+							)}
 							<div className="pd-actions">
-								<button className="btn btn-primary" onClick={handleAddToCart} disabled={product.stock < 1 || !selectedSize}>
+								<button className="btn btn-primary" onClick={handleAddToCart} disabled={product.stock < 1 || (requiresSize && !selectedSize)}>
 									{product.stock < 1 ? 'Out of stock' : 'Add to cart'}
 								</button>
 							</div>
-							{product.stock > 0 && !selectedSize && <p className="pd-state">Select a size to continue.</p>}
+							{requiresSize && product.stock > 0 && !selectedSize && <p className="pd-state">Select a size to continue.</p>}
 							{cartMessage && <p className="pd-state available" role="status">{cartMessage}</p>}
 
 							<div className="pd-description">

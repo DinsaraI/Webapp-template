@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { updateProduct } from '../services/productService';
-import { normalizeProductCategory, PRODUCT_CATEGORIES, type Product, type ProductCategory } from '../types/product';
+import { getFootwearSizeOptions, isFootwearCategory, normalizeProductCategory, PRODUCT_CATEGORIES, type Product, type ProductCategory, type ProductSizeSystem } from '../types/product';
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const CLOTHING_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 interface AdminEditProductProps {
   product: Product;
@@ -11,14 +11,16 @@ interface AdminEditProductProps {
 }
 
 export default function AdminEditProduct({ product, onClose, onProductUpdated }: AdminEditProductProps) {
+  const initialCategory = normalizeProductCategory(product.category);
   const [title, setTitle] = useState(product.title);
   const [price, setPrice] = useState(String(product.price));
-  const [category, setCategory] = useState<ProductCategory | ''>(normalizeProductCategory(product.category) ?? '');
+  const [category, setCategory] = useState<ProductCategory | ''>(initialCategory ?? '');
+  const [sizeSystem, setSizeSystem] = useState<ProductSizeSystem>(product.size_system ?? 'US');
   const [tagsInput, setTagsInput] = useState((Array.isArray(product.tags) ? product.tags : (product.tags ?? '').split(/[|,]/)).join(', '));
   const [description, setDescription] = useState(product.description);
   const [stock, setStock] = useState(String(product.stock));
   const [imageUrls, setImageUrls] = useState([...new Set([product.image_url, ...(product.images ?? [])])].join('\n'));
-  const [availableSizes, setAvailableSizes] = useState(product.available_sizes ?? []);
+  const [availableSizes, setAvailableSizes] = useState(initialCategory === 'bags' ? [] : (product.available_sizes ?? []));
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -30,12 +32,12 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
       setErrorMessage('Add at least one image URL.');
       return;
     }
-    if (availableSizes.length === 0) {
-      setErrorMessage('Select at least one available size.');
-      return;
-    }
     if (!category) {
       setErrorMessage('Choose a product category.');
+      return;
+    }
+    if (category !== 'bags' && availableSizes.length === 0) {
+      setErrorMessage('Select at least one available size.');
       return;
     }
     if (!tagsInput.split(',').some((tag) => tag.trim())) {
@@ -49,6 +51,7 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
         title: title.trim(),
         price: Number(price),
         category,
+        size_system: isFootwearCategory(category) ? sizeSystem : null,
         tags: [...new Set(tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean))],
         description: description.trim(),
         images,
@@ -87,9 +90,13 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
         </div>
         <label>
           Category
-          <select value={category} onChange={(event) => setCategory(event.target.value as ProductCategory | '')} required>
-            <option value="">Choose a category</option>
-            {PRODUCT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            <select value={category} onChange={(event) => {
+              const nextCategory = event.target.value as ProductCategory | '';
+              setCategory(nextCategory);
+              setAvailableSizes(nextCategory === 'bags' || isFootwearCategory(nextCategory) ? [] : CLOTHING_SIZES);
+            }} required>
+              <option value="">Choose a category</option>
+              {PRODUCT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         </label>
         <label>
@@ -104,19 +111,38 @@ export default function AdminEditProduct({ product, onClose, onProductUpdated }:
           Product image URLs (one per line; first is the primary image)
           <textarea value={imageUrls} onChange={(event) => setImageUrls(event.target.value)} required rows={4} />
         </label>
-        <fieldset className="admin-product-sizes">
-          <legend>Available sizes (choose at least one)</legend>
-          {SIZES.map((size) => (
-            <label key={size}>
-              <input
-                type="checkbox"
-                checked={availableSizes.includes(size)}
-                onChange={() => setAvailableSizes((current) => current.includes(size) ? current.filter((item) => item !== size) : [...current, size])}
-              />
-              {size}
-            </label>
-          ))}
-        </fieldset>
+        {category !== 'bags' && (
+          <>
+            {isFootwearCategory(category) && (
+              <label>
+                Footwear sizing system
+                <select value={sizeSystem} onChange={(event) => {
+                  setSizeSystem(event.target.value as ProductSizeSystem);
+                  setAvailableSizes([]);
+                }}>
+                  <option value="US">US sizes</option>
+                  <option value="UK">UK sizes</option>
+                </select>
+              </label>
+            )}
+            <fieldset className="admin-product-sizes">
+              <legend>Available {isFootwearCategory(category) ? `${sizeSystem} footwear sizes` : 'sizes'} (choose at least one)</legend>
+              {(isFootwearCategory(category) && category
+                ? getFootwearSizeOptions(category, sizeSystem)
+                : CLOTHING_SIZES).map((size) => (
+                <label key={size}>
+                  <input
+                    type="checkbox"
+                    checked={availableSizes.includes(size)}
+                    onChange={() => setAvailableSizes((current) => current.includes(size) ? current.filter((item) => item !== size) : [...current, size])}
+                  />
+                  {size}
+                </label>
+              ))}
+            </fieldset>
+          </>
+        )}
+        {category === 'bags' && <p>Bags do not use sizes.</p>}
         {errorMessage && <p className="admin-product-message error" role="alert">{errorMessage}</p>}
         <div className="admin-edit-actions">
           <button type="button" onClick={onClose} disabled={saving}>Cancel</button>

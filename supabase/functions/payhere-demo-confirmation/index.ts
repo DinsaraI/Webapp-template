@@ -13,7 +13,12 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 	});
 }
 
-function isOrderItem(item: unknown): item is { productId: string; quantity: number; size: string } {
+function isOrderItem(item: unknown): item is {
+	productId: string;
+	quantity: number;
+	size?: string | null;
+	sizeSystem?: 'US' | 'UK' | null;
+} {
 	return typeof item === 'object'
 		&& item !== null
 		&& !Array.isArray(item)
@@ -21,8 +26,8 @@ function isOrderItem(item: unknown): item is { productId: string; quantity: numb
 		&& typeof item.productId === 'string'
 		&& 'quantity' in item
 		&& typeof item.quantity === 'number'
-		&& 'size' in item
-		&& typeof item.size === 'string';
+		&& (!('size' in item) || item.size === null || typeof item.size === 'string')
+		&& (!('sizeSystem' in item) || item.sizeSystem === null || item.sizeSystem === 'US' || item.sizeSystem === 'UK');
 }
 
 Deno.serve(async (request: Request) => {
@@ -84,7 +89,8 @@ Deno.serve(async (request: Request) => {
 		p_items: order.items.map((item) => ({
 			product_id: item.productId,
 			quantity: item.quantity,
-			size: item.size,
+			size: item.size ?? null,
+			size_system: item.sizeSystem ?? null,
 		})),
 		p_payment_reference: reference,
 	});

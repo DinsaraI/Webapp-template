@@ -1,6 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { createProduct } from '../services/productService';
-import { PRODUCT_CATEGORIES, type ProductCategory } from '../types/product';
+import { getFootwearSizeOptions, isFootwearCategory, PRODUCT_CATEGORIES, type ProductCategory, type ProductSizeSystem } from '../types/product';
+
+const CLOTHING_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 interface AdminAddProductProps {
   onProductAdded: () => void;
@@ -14,6 +16,7 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
   const [stock, setStock] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [category, setCategory] = useState<ProductCategory | ''>('');
+  const [sizeSystem, setSizeSystem] = useState<ProductSizeSystem>('US');
   const [tagsInput, setTagsInput] = useState('');
   const [availableSizes, setAvailableSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
   const [loading, setLoading] = useState(false);
@@ -28,12 +31,12 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
       setErrorMessage('Choose at least one product image to upload.');
       return;
     }
-    if (availableSizes.length === 0) {
-      setErrorMessage('Select at least one available size.');
-      return;
-    }
     if (!category) {
       setErrorMessage('Choose a product category.');
+      return;
+    }
+    if (category !== 'bags' && availableSizes.length === 0) {
+      setErrorMessage('Select at least one available size.');
       return;
     }
     if (!tagsInput.split(',').some((tag) => tag.trim())) {
@@ -49,6 +52,7 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
         description: description.trim(),
         stock: Number(stock),
         category,
+        size_system: isFootwearCategory(category) ? sizeSystem : null,
         tags: [...new Set(tagsInput.split(',').map((tag) => tag.trim()).filter(Boolean))],
         available_sizes: availableSizes,
       }, images);
@@ -58,6 +62,7 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
       setStock('');
       setImages([]);
       setCategory('');
+      setSizeSystem('US');
       setTagsInput('');
       setAvailableSizes(['S', 'M', 'L', 'XL']);
       formRef.current?.reset();
@@ -89,7 +94,11 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
       </div>
       <label>
         Category
-        <select value={category} onChange={(event) => setCategory(event.target.value as ProductCategory | '')} required>
+        <select value={category} onChange={(event) => {
+          const nextCategory = event.target.value as ProductCategory | '';
+          setCategory(nextCategory);
+          setAvailableSizes(nextCategory === 'bags' || isFootwearCategory(nextCategory) ? [] : ['S', 'M', 'L', 'XL']);
+        }} required>
           <option value="">Choose a category</option>
           {PRODUCT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
         </select>
@@ -106,19 +115,38 @@ export default function AdminAddProduct({ onProductAdded }: AdminAddProductProps
         Product images
         <input type="file" accept="image/*" multiple onChange={(event) => setImages(Array.from(event.target.files ?? []))} required />
       </label>
-      <fieldset className="admin-product-sizes" aria-required="true">
-        <legend>Available sizes (choose at least one)</legend>
-        {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-          <label key={size}>
-            <input
-              type="checkbox"
-              checked={availableSizes.includes(size)}
-              onChange={() => setAvailableSizes((current) => current.includes(size) ? current.filter((item) => item !== size) : [...current, size])}
-            />
-            {size}
-          </label>
-        ))}
-      </fieldset>
+      {category !== 'bags' && (
+        <>
+          {isFootwearCategory(category) && (
+            <label>
+              Footwear sizing system
+              <select value={sizeSystem} onChange={(event) => {
+                setSizeSystem(event.target.value as ProductSizeSystem);
+                setAvailableSizes([]);
+              }}>
+                <option value="US">US sizes</option>
+                <option value="UK">UK sizes</option>
+              </select>
+            </label>
+          )}
+          <fieldset className="admin-product-sizes" aria-required="true">
+            <legend>Available {isFootwearCategory(category) ? `${sizeSystem} footwear sizes` : 'sizes'} (choose at least one)</legend>
+            {(isFootwearCategory(category) && category
+              ? getFootwearSizeOptions(category, sizeSystem)
+              : CLOTHING_SIZES).map((size) => (
+              <label key={size}>
+                <input
+                  type="checkbox"
+                  checked={availableSizes.includes(size)}
+                  onChange={() => setAvailableSizes((current) => current.includes(size) ? current.filter((item) => item !== size) : [...current, size])}
+                />
+                {size}
+              </label>
+            ))}
+          </fieldset>
+        </>
+      )}
+      {category === 'bags' && <p>Bags do not use sizes.</p>}
       {errorMessage && <p className="admin-product-message error" role="alert">{errorMessage}</p>}
       {successMessage && <p className="admin-product-message success" role="status">{successMessage}</p>}
       <button type="submit" disabled={loading}>{loading ? 'Uploading...' : 'Upload product'}</button>

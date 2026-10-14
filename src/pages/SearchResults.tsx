@@ -67,6 +67,7 @@ export default function SearchResults({ isSignedIn = false, onSignOut }: SearchR
           image={product.image_url}
           price={formatPrice(product.price)}
           addedAt={product.created_at}
+          hasSizes={product.category !== 'bags'}
         />
       ))}
     </div>

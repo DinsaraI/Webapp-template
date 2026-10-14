@@ -9,6 +9,7 @@ type ProductCardProps = {
 	addedAt?: string | number | Date; // date when the product went live
 	onClick?: () => void;
 	id?: string;
+	hasSizes?: boolean;
 };
 const daysSince = (d?: string | number | Date) => {
 	if (!d) return 0;
@@ -25,6 +26,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 	addedAt,
 	onClick,
 	id,
+	hasSizes = true,
 }) => {
 	const navigate = useNavigate();
 	const days = daysSince(addedAt);
@@ -65,7 +67,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 							navigate(`/product/${id}`);
 						}}
 					>
-						Choose size
+						{hasSizes ? 'Choose size' : 'View product'}
 					</button>
 				</div>
 			</div>
